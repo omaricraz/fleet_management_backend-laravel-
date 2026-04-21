@@ -2,12 +2,12 @@
 
 namespace App\Http\Resources;
 
-use App\Models\User;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin User */
-class UserResource extends JsonResource
+/** @mixin Tenant */
+class TenantResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -17,10 +17,9 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
-            'role' => $this->role,
-            'tenant_id' => $this->tenant_id,
-            'is_platform_admin' => (bool) $this->is_platform_admin,
+            'subscription_plan' => $this->subscription_plan,
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

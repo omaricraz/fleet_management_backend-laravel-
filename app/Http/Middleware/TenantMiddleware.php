@@ -13,7 +13,23 @@ class TenantMiddleware
     {
         $user = $request->user();
 
-        if (! $user || ! $user->tenant_id) {
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant context is required',
+                'errors' => (object) [],
+            ], 403);
+        }
+
+        if ($user->is_platform_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant user account required',
+                'errors' => (object) [],
+            ], 403);
+        }
+
+        if (! $user->tenant_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tenant context is required',

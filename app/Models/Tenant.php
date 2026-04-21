@@ -24,4 +24,29 @@ class Tenant extends Model
     {
         return $this->hasMany(User::class, 'tenant_id');
     }
+
+    public function cars(): HasMany
+    {
+        return $this->hasMany(Car::class);
+    }
+
+    public function drivers(): HasMany
+    {
+        return $this->hasMany(Driver::class);
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function zones(): HasMany
+    {
+        return $this->hasMany(Zone::class);
+    }
 }

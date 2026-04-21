@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\PlatformAdminMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
             'role' => RoleMiddleware::class,
+            'platform.admin' => PlatformAdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

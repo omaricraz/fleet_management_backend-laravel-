@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ResolvesTenantRouteBinding;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +13,9 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, ResolvesTenantRouteBinding;
 
-    protected $table = 'user';
+    protected $table = 'users';
 
     /**
      * @var list<string>
@@ -41,6 +42,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'is_platform_admin' => 'boolean',
         ];
     }
 

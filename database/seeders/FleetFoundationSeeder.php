@@ -23,5 +23,30 @@ class FleetFoundationSeeder extends Seeder
             'tenant_id' => $tenant->id,
             'role' => 'admin',
         ]);
+
+        User::query()->create([
+            'name' => 'Manager',
+            'email' => 'manager@test.com',
+            'password' => Hash::make('password'),
+            'tenant_id' => $tenant->id,
+            'role' => 'manager',
+        ]);
+
+        User::query()->create([
+            'name' => 'Driver',
+            'email' => 'driver@test.com',
+            'password' => Hash::make('password'),
+            'tenant_id' => $tenant->id,
+            'role' => 'driver',
+        ]);
+
+        User::query()->forceCreate([
+            'name' => 'Platform Admin',
+            'email' => 'platform@test.com',
+            'password' => Hash::make('password'),
+            'tenant_id' => null,
+            'role' => 'admin',
+            'is_platform_admin' => true,
+        ]);
     }
 }
