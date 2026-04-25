@@ -17,6 +17,7 @@ class ZoneResource extends JsonResource
         return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
+            'name' => $this->name,
             'city' => $this->city,
             'number_of_stores' => $this->number_of_stores,
             'created_at' => $this->created_at?->toIso8601String(),

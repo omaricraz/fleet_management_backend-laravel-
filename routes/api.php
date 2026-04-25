@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CarController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\DriverController;
 use App\Http\Controllers\Api\V1\PlatformTenantController;
+use App\Http\Controllers\Api\V1\PlatformUserController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\ZoneController;
@@ -20,6 +21,9 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'platform.admin'])->prefix('platform')->group(function (): void {
         Route::apiResource('tenants', PlatformTenantController::class);
+        Route::apiResource('users', PlatformUserController::class)
+            ->parameters(['users' => 'id'])
+            ->whereNumber('id');
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {

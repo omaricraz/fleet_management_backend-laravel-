@@ -23,8 +23,8 @@ class ZoneController extends Controller
         $paginator = $this->applyTenantListFilters(
             $query,
             $request,
-            ['city'],
-            ['id', 'city', 'number_of_stores', 'created_at', 'updated_at'],
+            ['city', 'name'],
+            ['id', 'city', 'name', 'number_of_stores', 'created_at', 'updated_at'],
             'id'
         );
 

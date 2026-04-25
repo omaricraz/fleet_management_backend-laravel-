@@ -20,6 +20,7 @@ class Zone extends Model
         'tenant_id',
         'city',
         'number_of_stores',
+        'name'
     ];
 
     public function tenant(): BelongsTo
