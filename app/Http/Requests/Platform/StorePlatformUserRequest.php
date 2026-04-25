@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Platform;
 
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreUserRequest extends TenantScopedFormRequest
+class StorePlatformUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,6 +18,7 @@ class StoreUserRequest extends TenantScopedFormRequest
     public function rules(): array
     {
         return [
+            'tenant_id' => ['required', 'integer', 'exists:tenant,id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],

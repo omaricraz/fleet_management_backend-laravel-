@@ -17,6 +17,7 @@ class StoreZoneRequest extends TenantScopedFormRequest
         return [
             'city' => ['required', 'string', 'max:255'],
             'number_of_stores' => ['nullable', 'integer', 'min:0'],
+            'name' => ['required', 'string', 'max:255'],
         ];
     }
 }
