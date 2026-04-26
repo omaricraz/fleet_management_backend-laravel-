@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\car;
 
 use Illuminate\Validation\Rule;
+use App\Http\Requests\TenantScopedFormRequest;
 
 class UpdateCarRequest extends TenantScopedFormRequest
 {

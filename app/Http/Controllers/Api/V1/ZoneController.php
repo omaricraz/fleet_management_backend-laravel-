@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\PaginatesTenantResources;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreZoneRequest;
-use App\Http\Requests\UpdateZoneRequest;
+use App\Http\Requests\zone\StoreZoneRequest;
+use App\Http\Requests\zone\UpdateZoneRequest;
 use App\Http\Resources\ZoneResource;
 use App\Models\Zone;
 use App\Traits\ApiResponse;

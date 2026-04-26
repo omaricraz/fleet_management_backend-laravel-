@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\product;
+use App\Http\Requests\TenantScopedFormRequest;
 
 class UpdateProductRequest extends TenantScopedFormRequest
 {

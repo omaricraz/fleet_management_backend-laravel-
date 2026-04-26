@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\zone;
+use App\Http\Requests\TenantScopedFormRequest;
 
 class StoreZoneRequest extends TenantScopedFormRequest
 {

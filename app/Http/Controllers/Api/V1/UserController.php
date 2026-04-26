@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\PaginatesTenantResources;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreUserRequest;
-use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\admin_user\StoreUserRequest;
+use App\Http\Requests\admin_user\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Traits\ApiResponse;

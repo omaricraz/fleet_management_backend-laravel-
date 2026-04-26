@@ -1,9 +1,11 @@
 <?php
 
+use App\Exceptions\InsufficientInventoryException;
 use App\Http\Middleware\PlatformAdminMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -23,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->appendToPriorityList(
+            AuthenticatesRequests::class,
+            TenantMiddleware::class
+        );
+
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
             'role' => RoleMiddleware::class,
@@ -32,6 +39,23 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e): bool {
             return $request->is('api/*') || $request->expectsJson();
+        });
+
+        $exceptions->render(function (InsufficientInventoryException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient inventory.',
+                'details' => [
+                    'car_id' => $e->carId,
+                    'product_id' => $e->productId,
+                    'available' => $e->available,
+                    'requested' => $e->requested,
+                ],
+            ], 422);
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {

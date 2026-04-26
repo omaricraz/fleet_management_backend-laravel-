@@ -78,7 +78,7 @@ return new class extends Migration
         if (! Schema::hasTable('sessions')) {
             Schema::create('sessions', function (Blueprint $table): void {
                 $table->string('id')->primary();
-                $table->foreignId('user_id')->nullable()->index()->constrained('user')->nullOnDelete();
+                $table->foreignId('user_id')->nullable()->index()->constrained('users')->nullOnDelete();
                 $table->string('ip_address', 45)->nullable();
                 $table->text('user_agent')->nullable();
                 $table->longText('payload');

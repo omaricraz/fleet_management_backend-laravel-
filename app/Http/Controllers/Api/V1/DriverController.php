@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\PaginatesTenantResources;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreDriverRequest;
-use App\Http\Requests\UpdateDriverRequest;
+use App\Http\Requests\driver\StoreDriverRequest;
+use App\Http\Requests\driver\UpdateDriverRequest;
 use App\Http\Resources\DriverResource;
 use App\Models\Driver;
 use App\Traits\ApiResponse;

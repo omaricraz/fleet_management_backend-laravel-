@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\PaginatesTenantResources;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCarRequest;
-use App\Http\Requests\UpdateCarRequest;
+use App\Http\Requests\car\StoreCarRequest;
+use App\Http\Requests\car\UpdateCarRequest;
 use App\Http\Resources\CarResource;
 use App\Models\Car;
 use App\Traits\ApiResponse;

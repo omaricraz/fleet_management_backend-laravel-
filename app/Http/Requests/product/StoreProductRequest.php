@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\product;
+use App\Http\Requests\TenantScopedFormRequest;
+
 
 class StoreProductRequest extends TenantScopedFormRequest
 {

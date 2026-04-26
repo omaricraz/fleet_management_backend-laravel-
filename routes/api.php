@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CarController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\DriverController;
+use App\Http\Controllers\Api\V1\DriverInventoryController;
+use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\PlatformTenantController;
 use App\Http\Controllers\Api\V1\PlatformUserController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -35,6 +37,19 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
+
+        Route::get('inventory', [InventoryController::class, 'index']);
+        Route::get('inventory/alerts', [InventoryController::class, 'alerts']);  //not setup in database. 
+        Route::get('cars/{car}/inventory', [InventoryController::class, 'showForCar']);
+        Route::post('inventory/opening-balance', [InventoryController::class, 'openingBalance']);
+        Route::post('inventory/load', [InventoryController::class, 'load']);
+        Route::post('inventory/manual-sale', [InventoryController::class, 'manualSale']);
+        Route::post('inventory/close-count', [InventoryController::class, 'closeCount']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+        Route::post('inventory/return', [InventoryController::class, 'returnInventory']);
+
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin'])->group(function (): void {
@@ -42,5 +57,11 @@ Route::prefix('v1')->group(function (): void {
         Route::put('users/{user}', [UserController::class, 'update']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
+
+        Route::post('inventory/adjustment', [InventoryController::class, 'adjustment']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
+        Route::get('driver/inventory', [DriverInventoryController::class, 'show']);
     });
 });
