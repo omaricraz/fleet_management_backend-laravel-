@@ -52,6 +52,20 @@ final class InventoryMath
         return number_format($diff, self::SCALE, '.', '');
     }
 
+    public static function multiply(string|int|float $a, string|int|float $b): string
+    {
+        $x = self::normalize($a);
+        $y = self::normalize($b);
+
+        if (function_exists('bcmul')) {
+            return bcmul($x, $y, self::SCALE);
+        }
+
+        $product = (float) $x * (float) $y;
+
+        return number_format($product, self::SCALE, '.', '');
+    }
+
     /**
      * @return int<-1, 1>
      */

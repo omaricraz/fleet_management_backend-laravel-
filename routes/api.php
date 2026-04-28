@@ -47,7 +47,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('inventory/close-count', [InventoryController::class, 'closeCount']);
     });
 
-    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
         Route::post('inventory/return', [InventoryController::class, 'returnInventory']);
 
     });
