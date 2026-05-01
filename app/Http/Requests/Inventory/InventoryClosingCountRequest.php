@@ -33,7 +33,7 @@ class InventoryClosingCountRequest extends TenantScopedFormRequest
                 'required', 'integer',
                 Rule::exists('products', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
             ],
-            'items.*.actual_quantity' => ['required', 'numeric', 'gte:0'],
+            'items.*.actual_quantity' => ['required', 'numeric'],
         ];
     }
 }

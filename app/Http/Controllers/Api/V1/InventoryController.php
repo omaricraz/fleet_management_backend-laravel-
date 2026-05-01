@@ -7,9 +7,11 @@ use App\Http\Requests\Inventory\CarInventoryShowRequest;
 use App\Http\Requests\Inventory\InventoryAdjustmentRequest;
 use App\Http\Requests\Inventory\InventoryCarBatchRequest;
 use App\Http\Requests\Inventory\InventoryClosingCountRequest;
+use App\Http\Requests\Inventory\InventoryOpeningCountRequest;
 use App\Http\Requests\Inventory\InventoryReturnRequest;
 use App\Http\Requests\Inventory\ListFleetInventoryRequest;
 use App\Http\Resources\CarResource;
+use App\Exceptions\CarCapacityExceededException;
 use App\Models\Car;
 use App\Services\InventoryService;
 use App\Traits\ApiResponse;
@@ -65,49 +67,51 @@ class InventoryController extends Controller
         return $this->successResponse('Success', $data);
     }
 
-    public function openingBalance(InventoryCarBatchRequest $request): JsonResponse
-    {
-        $tenantId = (int) $request->attributes->get('tenant_id');
-        $userId = (int) $request->user()->id;
-        $results = [];
+    //need to justify opening balance when there's load, then it should have it's own request file
+    // public function openingBalance(InventoryOpeningCountRequest $request): JsonResponse
+    // {
+    //     $tenantId = (int) $request->attributes->get('tenant_id');
+    //     $userId = (int) $request->user()->id;
+    //     $results = [];
 
-        try {
-            foreach ($request->input('cars', []) as $row) {
-                $carId = (int) $row['car_id'];
-                $tripId = $row['trip_id'] ?? null;
-                if ($tripId !== null) {
-                    $tripId = (int) $tripId;
-                }
-                $lines = $this->inventory->applyOpeningBalance(
-                    $tenantId,
-                    $userId,
-                    $carId,
-                    $tripId,
-                    $row['items']
-                );
-                $results[] = [
-                    'car_id' => $carId,
-                    'lines' => $lines,
-                ];
-            }
-        } catch (InvalidArgumentException $e) {
-            return $this->errorResponse($e->getMessage(), (object) [], 422);
-        }
+    //     try {
+    //         foreach ($request->input('cars', []) as $row) {
+    //             $carId = (int) $row['car_id'];
+    //             $tripId = $row['trip_id'] ?? null;
+    //             if ($tripId !== null) {
+    //                 $tripId = (int) $tripId;
+    //             }
+    //             $lines = $this->inventory->applyOpeningBalance(
+    //                 $tenantId,
+    //                 $userId,
+    //                 $carId,
+    //                 $tripId,
+    //                 $row['items']
+    //             );
+    //             $results[] = [
+    //                 'car_id' => $carId,
+    //                 'lines' => $lines,
+    //             ];
+    //         }
+    //     } catch (InvalidArgumentException $e) {
+    //         return $this->errorResponse($e->getMessage(), (object) [], 422);
+    //     }
 
-        return $this->successResponse('Opening balance applied successfully', $results);
-    }
+    //     return $this->successResponse('Opening balance applied successfully', $results);
+    // }
 
     public function load(InventoryCarBatchRequest $request): JsonResponse
     {
         return $this->processItemBatch(
             $request,
             'Inventory loaded successfully',
-            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId): array => $this->inventory->applyLoad(
+            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applyLoad(
                 $tenantId,
                 $carId,
                 $productId,
                 $quantity,
-                $tripId
+                $userId,
+                $tripId,
             )
         );
     }
@@ -117,11 +121,12 @@ class InventoryController extends Controller
         return $this->processItemBatch(
             $request,
             'Sale applied successfully',
-            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId): array => $this->inventory->applySale(
+            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applySale(
                 $tenantId,
                 $carId,
                 $productId,
                 $quantity,
+                $userId,
                 $tripId,
                 null
             )
@@ -131,6 +136,7 @@ class InventoryController extends Controller
     public function returnInventory(InventoryReturnRequest $request): JsonResponse
     {
         $tenantId = (int) $request->attributes->get('tenant_id');
+        $userId = (int) $request->user()->id;
         $notes = (string) $request->input('notes');
         $results = [];
 
@@ -147,6 +153,7 @@ class InventoryController extends Controller
                         $carId,
                         (int) $item['product_id'],
                         $item['quantity'],
+                        $userId,
                         $notes,
                         $tripId
                     );
@@ -162,6 +169,7 @@ class InventoryController extends Controller
     public function adjustment(InventoryAdjustmentRequest $request): JsonResponse
     {
         $tenantId = (int) $request->attributes->get('tenant_id');
+        $userId = (int) $request->user()->id;
         $v = $request->validated();
         $carId = (int) $v['car_id'];
         $tripId = isset($v['trip_id']) ? (int) $v['trip_id'] : null;
@@ -175,6 +183,7 @@ class InventoryController extends Controller
                     (int) $row['product_id'],
                     (string) $row['mode'],
                     $row['quantity'],
+                    $userId,
                     $tripId
                 );
             }
@@ -204,7 +213,8 @@ class InventoryController extends Controller
         }
 
         try {
-            $rows = $this->inventory->applyClosingCount($tenantId, $carId, $counts, $tripId);
+            $userId = (int) $request->user()->id;
+            $rows = $this->inventory->applyClosingCount($tenantId, $carId, $counts, $userId, $tripId);
         } catch (InvalidArgumentException $e) {
             return $this->errorResponse($e->getMessage(), (object) [], 422);
         }
@@ -213,7 +223,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * @param  callable(int, int, int, string|int|float, ?int): array  $op
+     * @param  callable(int, int, int, string|int|float, ?int, int): array  $op
      */
     private function processItemBatch(
         InventoryCarBatchRequest $request,
@@ -221,6 +231,7 @@ class InventoryController extends Controller
         callable $op
     ): JsonResponse {
         $tenantId = (int) $request->attributes->get('tenant_id');
+        $userId = (int) $request->user()->id;
         $results = [];
 
         try {
@@ -236,7 +247,8 @@ class InventoryController extends Controller
                         $carId,
                         (int) $item['product_id'],
                         $item['quantity'],
-                        $tripId
+                        $tripId,
+                        $userId
                     );
                     $results[] = array_merge(
                         [
@@ -247,7 +259,7 @@ class InventoryController extends Controller
                     );
                 }
             }
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException | CarCapacityExceededException $e) {
             return $this->errorResponse($e->getMessage(), (object) [], 422);
         }
 

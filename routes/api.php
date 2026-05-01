@@ -34,7 +34,6 @@ Route::prefix('v1')->group(function (): void {
         Route::apiResource('drivers', DriverController::class);
         Route::apiResource('products', ProductController::class);
         Route::apiResource('customers', CustomerController::class);
-
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
 
@@ -47,7 +46,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('inventory/close-count', [InventoryController::class, 'closeCount']);
     });
 
-    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
         Route::post('inventory/return', [InventoryController::class, 'returnInventory']);
 
     });

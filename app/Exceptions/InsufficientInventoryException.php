@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use RuntimeException;
 use Throwable;
 
+//this is for when there is not enough inventory to complete the operation, it throws an exception eg. "not enough inventory to load"
 final class InsufficientInventoryException extends RuntimeException
 {
     public function __construct(

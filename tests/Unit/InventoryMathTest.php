@@ -21,6 +21,12 @@ class InventoryMathTest extends TestCase
         $this->assertSame('2.500000', InventoryMath::sub('10.5', '8'));
     }
 
+    public function test_multiply(): void
+    {
+        $this->assertSame('6.000000', InventoryMath::multiply('2', '3'));
+        $this->assertSame('25.500000', InventoryMath::multiply('10', '2.55'));
+    }
+
     public function test_compare(): void
     {
         $this->assertSame(0, InventoryMath::compare('5.000000', '5'));

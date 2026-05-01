@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\driver;
+use App\Http\Requests\TenantScopedFormRequest;
 
 use Illuminate\Validation\Rule;
 

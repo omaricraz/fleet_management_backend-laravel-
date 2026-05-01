@@ -26,7 +26,7 @@ class InventoryCarBatchRequest extends TenantScopedFormRequest
                 Rule::exists('cars', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.trip_id' => [
-                'nullable', 'integer',
+                'nullable', 'integer', //should be required when trip feature is implemented!!!!!
                 Rule::exists('trips', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.items' => ['required', 'array', 'min:1'],

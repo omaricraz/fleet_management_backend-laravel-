@@ -28,6 +28,11 @@ class InventoryTransaction extends Model
         'created_at',
         'before_qty',
         'after_qty',
+        'notes',
+        'actual_quantity',
+        'expected_quantity',
+        'variance',
+        'user_id',
     ];
 
     /**
@@ -56,5 +61,10 @@ class InventoryTransaction extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

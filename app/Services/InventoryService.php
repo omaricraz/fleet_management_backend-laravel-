@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DataTransferObjects\InventoryOperationData;
+use App\Exceptions\CarCapacityExceededException;
 use App\Exceptions\InsufficientInventoryException;
 use App\Models\Car;
 use App\Models\Inventory;
@@ -30,6 +31,12 @@ final class InventoryService
 
     public const TYPE_ADJUSTMENT = 'adjustment';
 
+    public const TYPE_RETURN = 'return';
+
+    public const TYPE_CLOSING_COUNT = 'closing';
+
+    public const TYPE_OPENING_BALANCE = 'opening';
+
     public function __construct(
         private readonly int $lowStockThreshold = 5,
         private readonly int $defaultHistoryLimit = 50,
@@ -48,50 +55,52 @@ final class InventoryService
      * @param  list<array{product_id: int|string, quantity: string|int|float}>|list<InventoryOperationData>  $items
      * @return list<array{product_id: int, before_qty: string, after_qty: string, transaction_id: int}>
      */
-    public function applyOpeningBalance(
-        int $tenantId,
-        ?int $userId,
-        int $carId,
-        ?int $tripId,
-        array $items,
-    ): array {
-        $this->assertTenantOwnsCar($tenantId, $carId);
+    //need to justify it's usecase before letting exist again !!!!!
+    
+    // public function applyOpeningBalance(
+    //     int $tenantId,
+    //     ?int $userId,
+    //     int $carId,
+    //     ?int $tripId,
+    //     array $items,
+    // ): array {
+    //     $this->assertTenantOwnsCar($tenantId, $carId);
 
-        $normalized = $this->normalizeItemInputs($items);
+    //     $normalized = $this->normalizeItemInputs($items);
 
-        return DB::transaction(function () use ($tenantId, $carId, $tripId, $normalized): array {
-            $results = [];
+    //     return DB::transaction(function () use ($tenantId, $carId, $tripId, $normalized): array {
+    //         $results = [];
 
-            foreach ($normalized as $item) {
-                $before = $this->getCurrentQuantity($tenantId, $carId, $item->productId);
-                $after = $item->quantity;
-                $delta = InventoryMath::sub($after, $before);
+    //         foreach ($normalized as $item) {
+    //             $before = $this->getCurrentQuantity($tenantId, $carId, $item->productId);
+    //             $after = $item->quantity;
+    //             $delta = InventoryMath::sub($after, $before);
 
-                $this->persistSnapshotQty($tenantId, $carId, $item->productId, $after, $tripId);
+    //             $this->persistSnapshotQty($tenantId, $carId, $item->productId, $after, $tripId);
 
-                $tx = $this->createTransaction(
-                    $tenantId,
-                    $carId,
-                    $item->productId,
-                    self::TYPE_ADJUSTMENT,
-                    $delta,
-                    $tripId,
-                    null,
-                    $before,
-                    $after
-                );
+    //             $tx = $this->createTransaction(
+    //                 $tenantId,
+    //                 $carId,
+    //                 $item->productId,
+    //                 self::TYPE_OPENING_BALANCE,
+    //                 $delta,
+    //                 $tripId,
+    //                 null,
+    //                 $before,
+    //                 $after
+    //             );
 
-                $results[] = [
-                    'product_id' => $item->productId,
-                    'before_qty' => $before,
-                    'after_qty' => $after,
-                    'transaction_id' => $tx->id,
-                ];
-            }
+    //             $results[] = [
+    //                 'product_id' => $item->productId,
+    //                 'before_qty' => $before,
+    //                 'after_qty' => $after,
+    //                 'transaction_id' => $tx->id,
+    //             ];
+    //         }
 
-            return $results;
-        });
-    }
+    //         return $results;
+    //     });
+    // }
 
     /**
      * @return array{before_qty: string, after_qty: string, transaction_id: int}
@@ -101,15 +110,17 @@ final class InventoryService
         int $carId,
         int $productId,
         string|int|float $quantity,
+        int $userId,
         ?int $tripId = null,
     ): array {
         $qty = $this->requireNonNegativeQuantity($quantity);
         $this->assertTenantOwnsCar($tenantId, $carId);
         $this->assertTenantOwnsProduct($tenantId, $productId);
 
-        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId): array {
+        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId, $userId): array {
             $before = $this->getCurrentQuantity($tenantId, $carId, $productId);
             $after = InventoryMath::add($before, $qty);
+            $this->assertCarCapacityAllowsLoad($tenantId, $carId, $productId, $after);
             $this->persistSnapshotQty($tenantId, $carId, $productId, $after, null);
 
             $tx = $this->createTransaction(
@@ -121,7 +132,12 @@ final class InventoryService
                 $tripId,
                 null,
                 $before,
-                $after
+                $after,
+                null,
+                null,
+                null,
+                null,
+                $userId,
             );
 
             $this->assertNonNegativeSnapshot($tenantId, $carId, $productId, $after);
@@ -142,6 +158,7 @@ final class InventoryService
         int $carId,
         int $productId,
         string|int|float $quantity,
+        int $userId,
         ?int $tripId = null,
         ?int $saleId = null,
     ): array {
@@ -149,7 +166,7 @@ final class InventoryService
         $this->assertTenantOwnsCar($tenantId, $carId);
         $this->assertTenantOwnsProduct($tenantId, $productId);
 
-        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId, $saleId): array {
+        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId, $saleId, $userId): array {
             $before = $this->getCurrentQuantity($tenantId, $carId, $productId);
 
             if (InventoryMath::compare($before, $qty) < 0) {
@@ -174,7 +191,12 @@ final class InventoryService
                 $tripId,
                 $saleId,
                 $before,
-                $after
+                $after,
+                null,
+                null,
+                null,
+                null,
+                $userId,
             );
 
             $this->assertNonNegativeSnapshot($tenantId, $carId, $productId, $after);
@@ -197,6 +219,7 @@ final class InventoryService
         int $carId,
         int $productId,
         string|int|float $quantity,
+        int $userId,
         ?string $notes = null,
         ?int $tripId = null,
     ): array {
@@ -208,7 +231,7 @@ final class InventoryService
         $this->assertTenantOwnsCar($tenantId, $carId);
         $this->assertTenantOwnsProduct($tenantId, $productId);
 
-        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId): array {
+        return DB::transaction(function () use ($tenantId, $carId, $productId, $qty, $tripId, $notes, $userId): array {
             $before = $this->getCurrentQuantity($tenantId, $carId, $productId);
 
             if (InventoryMath::compare($before, $qty) < 0) {
@@ -230,12 +253,18 @@ final class InventoryService
                 $tenantId,
                 $carId,
                 $productId,
-                self::TYPE_ADJUSTMENT,
+                self::TYPE_RETURN,
                 $ledgerDelta,
                 $tripId,
                 null,
                 $before,
-                $after
+                $after,
+                $notes,
+                null,
+                null,
+                null,
+                $userId
+
             );
 
             $this->assertNonNegativeSnapshot($tenantId, $carId, $productId, $after);
@@ -259,6 +288,7 @@ final class InventoryService
         int $productId,
         string $mode,
         string|int|float $quantity,
+        int $userId,
         ?int $tripId = null,
     ): array {
         if (! in_array($mode, ['increase', 'decrease', 'set'], true)) {
@@ -268,7 +298,7 @@ final class InventoryService
         $this->assertTenantOwnsCar($tenantId, $carId);
         $this->assertTenantOwnsProduct($tenantId, $productId);
 
-        return DB::transaction(function () use ($tenantId, $carId, $productId, $mode, $quantity, $tripId): array {
+        return DB::transaction(function () use ($tenantId, $carId, $productId, $mode, $quantity, $tripId, $userId): array {
             $before = $this->getCurrentQuantity($tenantId, $carId, $productId);
 
             $after = match ($mode) {
@@ -300,7 +330,12 @@ final class InventoryService
                 $tripId,
                 null,
                 $before,
-                $after
+                $after,
+                null,
+                null,
+                null,
+                null,
+                $userId
             );
 
             $this->assertNonNegativeSnapshot($tenantId, $carId, $productId, $after);
@@ -330,11 +365,12 @@ final class InventoryService
         int $tenantId,
         int $carId,
         array $counts,
+        int $userId,
         ?int $tripId = null,
     ): array {
         $this->assertTenantOwnsCar($tenantId, $carId);
 
-        return DB::transaction(function () use ($tenantId, $carId, $counts, $tripId): array {
+        return DB::transaction(function () use ($tenantId, $carId, $counts, $tripId, $userId): array {
             $out = [];
 
             foreach ($counts as $row) {
@@ -348,19 +384,23 @@ final class InventoryService
                 $actual = $this->requireNonNegativeQuantity($row['actual_quantity']);
                 $expected = $this->getCurrentQuantity($tenantId, $carId, $productId);
                 $variance = InventoryMath::sub($actual, $expected);
-
                 $this->persistSnapshotQty($tenantId, $carId, $productId, $actual, null);
 
                 $tx = $this->createTransaction(
                     $tenantId,
                     $carId,
                     $productId,
-                    self::TYPE_ADJUSTMENT,
-                    $variance,
+                    self::TYPE_CLOSING_COUNT,
+                    null,
                     $tripId,
                     null,
+                    null,
+                    null,
+                    null,
+                    $actual,
                     $expected,
-                    $actual
+                    $variance,
+                    $userId,
                 );
 
                 $this->assertNonNegativeSnapshot($tenantId, $carId, $productId, $actual);
@@ -624,8 +664,8 @@ final class InventoryService
 
         $negativeVariance = InventoryTransaction::query()
             ->where('tenant_id', $tenantId)
-            ->where('type', self::TYPE_ADJUSTMENT)
-            ->where('quantity', '<', 0)
+            ->where('type', self::TYPE_CLOSING_COUNT)
+            ->where('variance', '<', 0)
             ->where('created_at', '>=', $since)
             ->with(['car:id,model,plate_number', 'product:id,item'])
             ->orderByDesc('id')
@@ -637,7 +677,7 @@ final class InventoryService
                     'car_name' => $this->formatCarName($tx->car),
                     'product_id' => (int) $tx->product_id,
                     'product_name' => (string) ($tx->product?->item ?? ''),
-                    'quantity' => InventoryMath::normalize((string) $tx->quantity),
+                    'variance' => (string) $tx->variance,
                     'transaction_id' => $tx->id,
                     'created_at' => $tx->created_at?->toIso8601String(),
                 ];
@@ -674,7 +714,7 @@ final class InventoryService
             'low_stock' => $lowStock,
             'zero_stock' => $zeroStock,
             'negative_variance_recent' => $negativeVariance,
-            'repeated_shortages' => $repeated,
+            // 'repeated_shortages' => $repeated,
         ];
     }
 
@@ -736,13 +776,18 @@ final class InventoryService
         int $carId,
         int $productId,
         string $type,
-        string $quantity,
+        ?string $quantity,
         ?int $tripId,
         ?int $saleId,
-        string $beforeQty,
-        string $afterQty,
+        ?string $beforeQty,
+        ?string $afterQty,
+        ?string $notes = null,
+        ?string $actualQty = null,
+        ?string $expectedQty = null,
+        ?string $variance = null,
+        int $userId,
     ): InventoryTransaction {
-        if (! in_array($type, [self::TYPE_LOAD, self::TYPE_SALE, self::TYPE_ADJUSTMENT], true)) {
+        if (! in_array($type, [self::TYPE_LOAD, self::TYPE_SALE, self::TYPE_ADJUSTMENT, self::TYPE_RETURN, self::TYPE_CLOSING_COUNT, self::TYPE_OPENING_BALANCE], true)) {
             throw new InvalidArgumentException('Invalid transaction type for persistence.');
         }
 
@@ -752,11 +797,16 @@ final class InventoryService
             'product_id' => $productId,
             'trip_id' => $tripId,
             'sale_id' => $saleId,
-            'quantity' => InventoryMath::normalize($quantity),
+            'quantity' => $quantity !== null ? InventoryMath::normalize($quantity) : null,
             'type' => $type,
             'created_at' => now(),
-            'before_qty' => InventoryMath::normalize($beforeQty),
-            'after_qty' => InventoryMath::normalize($afterQty),
+            'before_qty' => $beforeQty !== null ? InventoryMath::normalize($beforeQty) : null,
+            'after_qty' => $afterQty !== null ? InventoryMath::normalize($afterQty) : null,
+            'notes' => $notes,
+            'actual_quantity' => $actualQty !== null ? InventoryMath::normalize($actualQty) : null,
+            'expected_quantity' => $expectedQty !== null ? InventoryMath::normalize($expectedQty) : null,
+            'variance' => $variance !== null ? InventoryMath::normalize($variance) : null,
+            'user_id' => $userId,
         ]);
     }
 
@@ -785,6 +835,120 @@ final class InventoryService
         }
 
         return InventoryMath::sub($before, $qty);
+    }
+
+    private function assertCarCapacityAllowsLoad(
+        int $tenantId,
+        int $carId,
+        int $productId,
+        string $afterQty,
+    ): void {
+        $car = Car::query()
+            ->where('tenant_id', $tenantId)
+            ->where('id', $carId)
+            ->first(['id', 'overall_volume_capacity', 'overall_weight_capacity']);
+
+        if ($car === null) {
+            return;
+        }
+
+        $volumeCapRaw = $car->overall_volume_capacity;
+        $weightCapRaw = $car->overall_weight_capacity;
+        $checkVolume = $volumeCapRaw !== null;
+        $checkWeight = $weightCapRaw !== null;
+
+        if (! $checkVolume && ! $checkWeight) {
+            return;
+        }
+
+        $quantities = [];
+        $rows = Inventory::query()
+            ->where('tenant_id', $tenantId)
+            ->where('car_id', $carId)
+            ->get(['product_id', 'quantity']);
+
+        foreach ($rows as $row) {
+            $quantities[(int) $row->product_id] = InventoryMath::normalize((string) $row->quantity);
+        }
+
+        $quantities[$productId] = InventoryMath::normalize($afterQty);
+
+        $productIds = array_keys($quantities);
+        $products = Product::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $productIds)
+            ->get(['id', 'unit_volume', 'unit_weight'])
+            ->keyBy('id');
+
+        $totalVolume = '0.000000';
+        $totalWeight = '0.000000';
+
+        foreach ($quantities as $pid => $qty) {
+            if (InventoryMath::compare($qty, '0') <= 0) {
+                continue;
+            }
+
+            $product = $products->get($pid);
+            if ($product === null) {
+                throw new InvalidArgumentException(sprintf('Missing product %d for capacity calculation.', $pid));
+            }
+
+            if ($checkVolume) {
+                if ($product->unit_volume === null) {
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'Product %d has no unit_volume; cannot verify volume capacity for car %d.',
+                            $pid,
+                            $carId
+                        )
+                    );
+                }
+
+                $lineVol = InventoryMath::multiply($qty, (string) $product->unit_volume);
+                $totalVolume = InventoryMath::add($totalVolume, $lineVol);
+            }
+
+            if ($checkWeight) {
+                if ($product->unit_weight === null) {
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'Product %d has no unit_weight; cannot verify weight capacity for car %d.',
+                            $pid,
+                            $carId
+                        )
+                    );
+                }
+
+                $lineWt = InventoryMath::multiply($qty, (string) $product->unit_weight);
+                $totalWeight = InventoryMath::add($totalWeight, $lineWt);
+            }
+        }
+
+        if ($checkVolume) {
+            $cap = InventoryMath::normalize((string) $volumeCapRaw);
+            if (InventoryMath::compare($totalVolume, $cap) > 0) {
+                throw new CarCapacityExceededException(
+                    $tenantId,
+                    $carId,
+                    'volume',
+                    $cap,
+                    $totalVolume
+                );
+            }
+        }
+
+        if ($checkWeight) {
+            $cap = InventoryMath::normalize((string) $weightCapRaw);
+            if (InventoryMath::compare($totalWeight, $cap) > 0) {
+                throw new CarCapacityExceededException(
+                    $tenantId,
+                    $carId,
+                    'weight',
+                    $cap,
+                    $totalWeight
+                );
+            }
+        }
     }
 
     /**
