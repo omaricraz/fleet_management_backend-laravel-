@@ -1,9 +1,11 @@
+<?php
+
 return new class extends Migration {
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('tenant_id')->constrained('tenant')->cascadeOnDelete();
             $table->string('item');
             $table->string('type', 100)->nullable();
             $table->decimal('price', 10, 2);

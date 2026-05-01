@@ -1,9 +1,15 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
 return new class extends Migration {
     public function up(): void
     {
         Schema::create('cars', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('tenant_id')->constrained('tenant')->cascadeOnDelete();
             $table->string('model', 100)->nullable();
             $table->string('plate_number', 50)->unique();
             $table->float('overall_volume_capacity')->default(0);

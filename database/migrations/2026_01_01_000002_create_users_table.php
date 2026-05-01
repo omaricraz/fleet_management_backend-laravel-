@@ -8,7 +8,7 @@ return new class extends Migration {
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('tenant_id')->constrained('tenant')->cascadeOnDelete();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');

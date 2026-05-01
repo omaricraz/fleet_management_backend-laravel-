@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Concerns\ResolvesDriverForAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CarResource;
-use App\Models\Driver;
 use App\Models\User;
 use App\Services\InventoryService;
 use App\Traits\ApiResponse;
@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 class DriverInventoryController extends Controller
 {
     use ApiResponse;
+    use ResolvesDriverForAuthenticatedUser;
 
     public function __construct(
         private readonly InventoryService $inventory,
@@ -25,7 +26,7 @@ class DriverInventoryController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $driver = $this->resolveDriverForUser($user, $tenantId);
+        $driver = $this->resolveDriverForAuthenticatedUser($user, $tenantId);
 
         if ($driver === null) {
             return $this->errorResponse(
@@ -44,22 +45,5 @@ class DriverInventoryController extends Controller
             'snapshot' => $data['snapshot'],
             'transactions' => $data['transactions'],
         ]);
-    }
-
-    private function resolveDriverForUser(User $user, int $tenantId): ?Driver
-    {
-        $byId = Driver::query()
-            ->where('tenant_id', $tenantId)
-            ->where('id', $user->id)
-            ->first();
-
-        if ($byId) {
-            return $byId;
-        }
-
-        return Driver::query()
-            ->where('tenant_id', $tenantId)
-            ->where('full_name', $user->name)
-            ->first();
     }
 }

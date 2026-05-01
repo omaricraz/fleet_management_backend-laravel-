@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Zone;
+use App\Services\TripService;
 use Illuminate\Database\Seeder;
 
 /**
@@ -134,6 +135,7 @@ class InventoryApiTestDataSeeder extends Seeder
                     'zone_id' => $zone->id,
                     'start_date' => now(),
                     'end_date' => null,
+                    'status' => TripService::STATUS_LOADING,
                 ]
             );
         } else {

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\PlatformTenantController;
 use App\Http\Controllers\Api\V1\PlatformUserController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\ZoneController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,5 +63,16 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
         Route::get('driver/inventory', [DriverInventoryController::class, 'show']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+        Route::get('trips', [TripController::class, 'index']);
+        Route::post('trips', [TripController::class, 'store']);
+        Route::get('trips/{trip}', [TripController::class, 'show']);
+        Route::patch('trips/{trip}/status', [TripController::class, 'updateStatus']);
+        Route::post('trips/{trip}/start', [TripController::class, 'start']);
+        Route::post('trips/{trip}/depart', [TripController::class, 'depart']);
+        Route::post('trips/{trip}/end', [TripController::class, 'end']);
+        Route::delete('trips/{trip}', [TripController::class, 'destroy']);
     });
 });

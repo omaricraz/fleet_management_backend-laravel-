@@ -1,10 +1,12 @@
+<?php
+
 return new class extends Migration {
     public function up(): void
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('tenant_id')->constrained('tenant')->cascadeOnDelete();
             $table->foreignId('trip_id')->constrained('trips')->cascadeOnDelete();
             $table->foreignId('driver_id')->constrained('drivers')->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
