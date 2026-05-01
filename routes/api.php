@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\PlatformTenantController;
 use App\Http\Controllers\Api\V1\PlatformUserController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\RequestController;
 use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\ZoneController;
 use Illuminate\Support\Facades\Route;
@@ -74,5 +75,21 @@ Route::prefix('v1')->group(function (): void {
         Route::post('trips/{trip}/depart', [TripController::class, 'depart']);
         Route::post('trips/{trip}/end', [TripController::class, 'end']);
         Route::delete('trips/{trip}', [TripController::class, 'destroy']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
+        Route::get('requests/my', [RequestController::class, 'my']);
+        Route::post('requests', [RequestController::class, 'store']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
+        Route::get('requests', [RequestController::class, 'index']);
+        Route::post('requests/{fleet_request}/approve', [RequestController::class, 'approve']);
+        Route::post('requests/{fleet_request}/reject', [RequestController::class, 'reject']);
+        Route::delete('requests/{fleet_request}', [RequestController::class, 'destroy']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+        Route::get('requests/{fleet_request}', [RequestController::class, 'show']);
     });
 });
