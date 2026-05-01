@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ResolvesTenantRouteBinding;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class TripEvent extends Model
+class Sale extends Model
 {
-    /**
-     * No updated_at column — only created_at is stored.
-     */
-    public const UPDATED_AT = null;
+    use ResolvesTenantRouteBinding, SoftDeletes;
 
     /**
      * @var list<string>
@@ -18,13 +17,19 @@ class TripEvent extends Model
     protected $fillable = [
         'tenant_id',
         'trip_id',
-        'event_type',
-        'user_id',
-        'quantity',
-        'amount',
+        'driver_id',
+        'customer_id',
         'product_id',
-        'metadata',
-        'description',
+        'quantity',
+        'total_price',
+        'sale_invoice_image',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'sale_invoice_image',
     ];
 
     /**
@@ -33,9 +38,8 @@ class TripEvent extends Model
     protected function casts(): array
     {
         return [
-            'metadata' => 'array',
-            'quantity' => 'decimal:2',
-            'amount' => 'decimal:2',
+            'quantity' => 'float',
+            'total_price' => 'decimal:4',
         ];
     }
 
@@ -49,9 +53,14 @@ class TripEvent extends Model
         return $this->belongsTo(Trip::class);
     }
 
-    public function user(): BelongsTo
+    public function driver(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Driver::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function product(): BelongsTo

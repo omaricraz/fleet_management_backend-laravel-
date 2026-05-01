@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\PlatformUserController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\RequestController;
+use App\Http\Controllers\Api\V1\SalesController;
 use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\ZoneController;
 use Illuminate\Support\Facades\Route;
@@ -40,7 +41,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('users/{user}', [UserController::class, 'show']);
 
         Route::get('inventory', [InventoryController::class, 'index']);
-        Route::get('inventory/alerts', [InventoryController::class, 'alerts']);  //not setup in database. 
+        Route::get('inventory/alerts', [InventoryController::class, 'alerts']);
         Route::get('cars/{car}/inventory', [InventoryController::class, 'showForCar']);
         Route::post('inventory/opening-balance', [InventoryController::class, 'openingBalance']);
         Route::post('inventory/load', [InventoryController::class, 'load']);
@@ -78,6 +79,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
+        Route::get('sales/my', [SalesController::class, 'my']);
         Route::get('requests/my', [RequestController::class, 'my']);
         Route::post('requests', [RequestController::class, 'store']);
     });
@@ -91,5 +93,13 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
         Route::get('requests/{fleet_request}', [RequestController::class, 'show']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
+        Route::get('sales', [SalesController::class, 'index']);
+        Route::post('sales', [SalesController::class, 'store']);
+        Route::get('sales/{sale}', [SalesController::class, 'show']);
+        Route::patch('sales/{sale}', [SalesController::class, 'update']);
+        Route::delete('sales/{sale}', [SalesController::class, 'destroy']);
     });
 });

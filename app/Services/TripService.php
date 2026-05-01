@@ -96,7 +96,7 @@ final class TripService
                 'status' => self::STATUS_LOADING,
             ])->save();
 
-            $this->recordTripEvent($trip, self::EVENT_START_TRIP, $userId, []);
+            $this->recordTripEvent($trip, self::EVENT_START_TRIP, $userId);
 
             return $trip->fresh();
         });
@@ -114,7 +114,7 @@ final class TripService
                 'status' => self::STATUS_IN_TRANSIT,
             ])->save();
 
-            $this->recordTripEvent($trip, self::EVENT_DEPARTURE, $userId, []);
+            $this->recordTripEvent($trip, self::EVENT_DEPARTURE, $userId);
 
             return $trip->fresh();
         });
@@ -142,8 +142,10 @@ final class TripService
             $from = $trip->status;
             $trip->forceFill(['status' => $newStatus])->save();
             $this->recordTripEvent($trip, self::EVENT_STATUS_UPDATE, $userId, [
-                'from' => $from,
-                'to' => $newStatus,
+                'metadata' => [
+                    'from' => $from,
+                    'to' => $newStatus,
+                ],
             ]);
 
             return $trip->fresh();
@@ -162,7 +164,7 @@ final class TripService
                 'status' => self::STATUS_IDLE,
             ])->save();
 
-            $this->recordTripEvent($trip, self::EVENT_END_TRIP, $userId, []);
+            $this->recordTripEvent($trip, self::EVENT_END_TRIP, $userId);
 
             return $trip->fresh();
         });
@@ -264,15 +266,18 @@ final class TripService
         ];
     }
 
-    private function recordTripEvent(Trip $trip, string $eventType, ?int $userId, array $payload): TripEvent
+    /**
+     * @param  array<string, mixed>  $attributes
+     *                         Optional: quantity, amount, product_id, metadata, description
+     */
+    private function recordTripEvent(Trip $trip, string $eventType, ?int $userId, array $attributes = []): TripEvent
     {
-        return TripEvent::query()->create([
+        return TripEvent::query()->create(array_merge([
             'tenant_id' => $trip->tenant_id,
             'trip_id' => $trip->id,
             'event_type' => $eventType,
             'user_id' => $userId,
-            'payload' => $payload === [] ? null : $payload,
-        ]);
+        ], $attributes));
     }
 
     private function assertTenantOwnsDriver(int $tenantId, int $driverId): void
