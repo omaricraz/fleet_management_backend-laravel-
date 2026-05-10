@@ -23,12 +23,8 @@ class UpdateTripStatusRequest extends TenantScopedFormRequest
                 'required',
                 'string',
                 Rule::in([
-                    TripService::STATUS_READY,
-                    TripService::STATUS_LOADING,
-                    TripService::STATUS_IN_TRANSIT,
-                    TripService::STATUS_SELLING,
-                    TripService::STATUS_OFFLOADING,
-                    // idle only via POST …/end
+                    TripService::STATUS_ACTIVE,
+                    TripService::STATUS_CLOSED
                 ]),
             ],
         ];

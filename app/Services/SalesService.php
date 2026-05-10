@@ -33,31 +33,31 @@ final class SalesService
      */
     public function createSale(int $tenantId, User $actor, array $data): Sale
     {
-        $trip = Trip::query()
-            ->where('tenant_id', $tenantId)
-            ->whereKey((int) $data['trip_id'])
-            ->first();
+        // $trip = Trip::query()
+        //     ->where('tenant_id', $tenantId)
+        //     ->whereKey((int) $data['trip_id'])
+        //     ->first();
 
-        if ($trip === null) {
-            throw new InvalidArgumentException('Trip not found.');
-        }
+        // if ($trip === null) {
+        //     throw new InvalidArgumentException('Trip not found.');
+        // }
 
-        if ($trip->status !== TripService::STATUS_SELLING) {
-            throw new InvalidArgumentException('Sales can only be recorded while the trip status is selling.');
-        }
-
-        $this->assertDriverRoleCanUseTrip($actor, $tenantId, $trip);
+        // if ($trip->status !== TripService::STATUS_SELLING) {
+        //     throw new InvalidArgumentException('Sales can only be recorded while the trip status is selling.');
+        // }
+        
+        // $this->assertDriverRoleCanUseTrip($actor, $tenantId, $trip);
 
         $productId = (int) $data['product_id'];
         $customerId = (int) $data['customer_id'];
 
-        if (! $this->tenantOwnsProduct($tenantId, $productId)) {
-            throw new InvalidArgumentException('Product does not belong to this tenant.');
-        }
+        // if (! $this->tenantOwnsProduct($tenantId, $productId)) {
+        //     throw new InvalidArgumentException('Product does not belong to this tenant.');
+        // }
 
-        if (! $this->tenantOwnsCustomer($tenantId, $customerId)) {
-            throw new InvalidArgumentException('Customer does not belong to this tenant.');
-        }
+        // if (! $this->tenantOwnsCustomer($tenantId, $customerId)) {
+        //     throw new InvalidArgumentException('Customer does not belong to this tenant.');
+        // }
 
         $carId = (int) $trip->car_id;
         $driverId = (int) $trip->driver_id;
@@ -114,7 +114,7 @@ final class SalesService
                 ],
             ]);
 
-            return $sale->fresh(['trip', 'driver', 'customer', 'product']);
+            return $sale->fresh();
         });
     }
 
@@ -165,7 +165,7 @@ final class SalesService
             $q->whereDate('created_at', '<=', $dateTo);
         }
 
-        return $q->with(['trip', 'driver', 'customer', 'product'])->get();
+        return $q->get();
     }
 
     /**
@@ -227,7 +227,7 @@ final class SalesService
             'total_price' => $data['total_price'],
         ])->save();
 
-        return $sale->fresh(['trip', 'driver', 'customer', 'product']);
+        return $sale->fresh();
     }
 
     /**

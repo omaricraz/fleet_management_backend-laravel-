@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'tenant_id' => $this->tenant_id,
             'is_platform_admin' => (bool) $this->is_platform_admin,
+            'driver_id' => $this->when($this->role === 'driver', $this->driver?->id),
         ];
     }
 }

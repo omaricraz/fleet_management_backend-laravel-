@@ -9,13 +9,22 @@ trait ResolvesDriverForAuthenticatedUser
 {
     private function resolveDriverForAuthenticatedUser(User $user, int $tenantId): ?Driver
     {
-        $byId = Driver::query()
+        $byUserId = Driver::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($byUserId !== null) {
+            return $byUserId;
+        }
+
+        $byLegacyId = Driver::query()
             ->where('tenant_id', $tenantId)
             ->where('id', $user->id)
             ->first();
 
-        if ($byId !== null) {
-            return $byId;
+        if ($byLegacyId !== null) {
+            return $byLegacyId;
         }
 
         return Driver::query()

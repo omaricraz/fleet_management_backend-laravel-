@@ -16,39 +16,9 @@ use InvalidArgumentException;
 
 final class TripService
 {
-    public const STATUS_READY = 'ready';
+    public const STATUS_ACTIVE = 'active';
 
-    public const STATUS_LOADING = 'loading';
-
-    public const STATUS_IN_TRANSIT = 'in_transit';
-
-    public const STATUS_SELLING = 'selling';
-
-    public const STATUS_OFFLOADING = 'offloading';
-
-    public const STATUS_IDLE = 'idle';
-
-    public const EVENT_START_TRIP = 'START_TRIP';
-
-    public const EVENT_DEPARTURE = 'DEPARTURE';
-
-    public const EVENT_STATUS_UPDATE = 'STATUS_UPDATE';
-
-    public const EVENT_END_TRIP = 'END_TRIP';
-
-    /**
-     * @return array<string, list<string>>
-     */
-    private function allowedStatusTransitions(): array
-    {
-        return [
-            self::STATUS_READY => [self::STATUS_LOADING],
-            self::STATUS_LOADING => [self::STATUS_IN_TRANSIT],
-            self::STATUS_IN_TRANSIT => [self::STATUS_SELLING],
-            self::STATUS_SELLING => [self::STATUS_OFFLOADING],
-            self::STATUS_OFFLOADING => [self::STATUS_IN_TRANSIT],
-        ];
-    }
+    public const STATUS_CLOSED = 'closed';
 
     /**
      * @param  array{driver_id: int, car_id: int, zone_id?: int|null, destination?: string|null}  $data
@@ -59,6 +29,8 @@ final class TripService
         $carId = (int) $data['car_id'];
         $zoneId = isset($data['zone_id']) ? ($data['zone_id'] !== null ? (int) $data['zone_id'] : null) : null;
         $destination = isset($data['destination']) ? (is_string($data['destination']) ? $data['destination'] : null) : null;
+        $arrivalTime = isset($data['arrival_time']) ? (is_string($data['arrival_time']) ? $data['arrival_time'] : null) : null;
+        $departure = isset($data['departure']) ? (is_string($data['departure']) ? $data['departure'] : null) : null;
 
         $this->assertTenantOwnsDriver($tenantId, $driverId);
         $this->assertTenantOwnsCar($tenantId, $carId);
@@ -70,21 +42,23 @@ final class TripService
         $this->assertNoActiveTripForDriver($tenantId, $driverId);
         $this->assertNoActiveTripForCar($tenantId, $carId);
 
-        return DB::transaction(function () use ($tenantId, $driverId, $carId, $zoneId, $destination): Trip {
+        return DB::transaction(function () use ($tenantId, $driverId, $carId, $zoneId, $destination, $arrivalTime, $departure): Trip {
             return Trip::query()->create([
                 'tenant_id' => $tenantId,
                 'zone_id' => $zoneId,
                 'driver_id' => $driverId,
                 'car_id' => $carId,
                 'destination' => $destination,
-                'status' => self::STATUS_READY,
+                'arrival_time' => $arrivalTime,
+                'departure' => $departure,
+                'status' => self::STATUS_ACTIVE,
             ]);
         });
     }
 
     public function startTrip(Trip $trip, ?int $userId): Trip
     {
-        if ($trip->status !== self::STATUS_READY) {
+        if ($trip->status !== self::STATUS_ACTIVE) {
             throw new InvalidArgumentException('Trip can only be started when status is ready.');
         }
 
@@ -93,78 +67,56 @@ final class TripService
             $trip->forceFill([
                 'start_date' => $now,
                 'arrival_time' => $now,
-                'status' => self::STATUS_LOADING,
+                'status' => self::STATUS_ACTIVE,
             ])->save();
 
-            $this->recordTripEvent($trip, self::EVENT_START_TRIP, $userId);
+            $this->recordTripEvent($trip, self::STATUS_ACTIVE, $userId);
 
             return $trip->fresh();
         });
     }
 
-    public function departTrip(Trip $trip, ?int $userId): Trip
-    {
-        if ($trip->status !== self::STATUS_LOADING) {
-            throw new InvalidArgumentException('Trip can only depart when status is loading.');
-        }
 
-        return DB::transaction(function () use ($trip, $userId): Trip {
-            $trip->forceFill([
-                'departure' => now(),
-                'status' => self::STATUS_IN_TRANSIT,
-            ])->save();
+    // public function updateStatus(Trip $trip, string $newStatus, ?int $userId): Trip
+    // {
+    //     $newStatus = trim($newStatus);
+    //     if ($newStatus === $trip->status) {
+    //         throw new InvalidArgumentException('Status must change.');
+    //     }
 
-            $this->recordTripEvent($trip, self::EVENT_DEPARTURE, $userId);
+    //     return DB::transaction(function () use ($trip, $newStatus, $userId): Trip {
+    //         $from = $trip->status;
+    //         $trip->forceFill(['status' => $newStatus])->save();
+    //         $this->recordTripEvent($trip, self::EVENT_ACTIVE, $userId, [
+    //             'metadata' => [
+    //                 'from' => $from,
+    //                 'to' => $newStatus,
+    //             ],
+    //         ]);
 
-            return $trip->fresh();
-        });
-    }
-
-    public function updateStatus(Trip $trip, string $newStatus, ?int $userId): Trip
-    {
-        $newStatus = trim($newStatus);
-        if ($newStatus === $trip->status) {
-            throw new InvalidArgumentException('Status must change.');
-        }
-
-        if ($newStatus === self::STATUS_IDLE) {
-            throw new InvalidArgumentException('Use the end trip action to set idle status.');
-        }
-
-        $allowed = $this->allowedStatusTransitions()[$trip->status] ?? [];
-        if (! in_array($newStatus, $allowed, true)) {
-            throw new InvalidArgumentException(
-                sprintf('Invalid status transition from %s to %s.', $trip->status, $newStatus)
-            );
-        }
-
-        return DB::transaction(function () use ($trip, $newStatus, $userId): Trip {
-            $from = $trip->status;
-            $trip->forceFill(['status' => $newStatus])->save();
-            $this->recordTripEvent($trip, self::EVENT_STATUS_UPDATE, $userId, [
-                'metadata' => [
-                    'from' => $from,
-                    'to' => $newStatus,
-                ],
-            ]);
-
-            return $trip->fresh();
-        });
-    }
+    //         return $trip->fresh();
+    //     });
+    // }
 
     public function endTrip(Trip $trip, ?int $userId): Trip
     {
-        if ($trip->status !== self::STATUS_IN_TRANSIT) {
-            throw new InvalidArgumentException('Trip can only be ended when status is in_transit.');
+        //check if the inventory has been close counted before ending the trip
+        $inventoryTransaction = InventoryTransaction::query()
+            ->where('trip_id', $trip->id)
+            ->where('type', InventoryService::TYPE_CLOSING_COUNT)
+            ->exists();
+
+        if (!$inventoryTransaction) {
+            throw new InvalidArgumentException('Inventory has not been close counted before ending the trip.');
         }
 
         return DB::transaction(function () use ($trip, $userId): Trip {
             $trip->forceFill([
                 'end_date' => now(),
-                'status' => self::STATUS_IDLE,
+                'status' => self::STATUS_CLOSED,
             ])->save();
 
-            $this->recordTripEvent($trip, self::EVENT_END_TRIP, $userId);
+            $this->recordTripEvent($trip, self::STATUS_CLOSED, $userId);
 
             return $trip->fresh();
         });
@@ -241,7 +193,7 @@ final class TripService
             ->selectRaw('product_id, SUM(quantity) as quantity, SUM(total_price) as total_price')
             ->groupBy('product_id')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn($row) => [
                 'product_id' => (int) $row->product_id,
                 'quantity' => (float) $row->quantity,
                 'total_price' => (string) $row->total_price,
@@ -255,7 +207,7 @@ final class TripService
             'car' => $trip->car,
             'timeline' => $timeline,
             'inventory_summary' => [
-                'on_hand' => $onHand->map(fn (Inventory $row) => [
+                'on_hand' => $onHand->map(fn(Inventory $row) => [
                     'product_id' => $row->product_id,
                     'product_name' => $row->product !== null ? (string) $row->product->item : '',
                     'quantity' => (string) $row->quantity,

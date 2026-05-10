@@ -35,8 +35,6 @@ Route::prefix('v1')->group(function (): void {
         Route::apiResource('zones', ZoneController::class);
         Route::apiResource('cars', CarController::class);
         Route::apiResource('drivers', DriverController::class);
-        Route::apiResource('products', ProductController::class);
-        Route::apiResource('customers', CustomerController::class);
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
 
@@ -51,7 +49,6 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
         Route::post('inventory/return', [InventoryController::class, 'returnInventory']);
-
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin'])->group(function (): void {
@@ -63,19 +60,22 @@ Route::prefix('v1')->group(function (): void {
         Route::post('inventory/adjustment', [InventoryController::class, 'adjustment']);
     });
 
-    Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'tenant', 'role:driver, manager, admin'])->group(function (): void {
         Route::get('driver/inventory', [DriverInventoryController::class, 'show']);
+        Route::get('driver/inventory/products', [DriverInventoryController::class, 'products']);
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
         Route::get('trips', [TripController::class, 'index']);
         Route::post('trips', [TripController::class, 'store']);
         Route::get('trips/{trip}', [TripController::class, 'show']);
-        Route::patch('trips/{trip}/status', [TripController::class, 'updateStatus']);
-        Route::post('trips/{trip}/start', [TripController::class, 'start']);
-        Route::post('trips/{trip}/depart', [TripController::class, 'depart']);
-        Route::post('trips/{trip}/end', [TripController::class, 'end']);
+        // Route::patch('trips/{trip}/status', [TripController::class, 'updateStatus']);
+        Route::post('trips/{trip}/open', [TripController::class, 'open']);
+        Route::post('trips/{trip}/close', [TripController::class, 'end']);
         Route::delete('trips/{trip}', [TripController::class, 'destroy']);
+        Route::apiResource('products', ProductController::class);
+        Route::apiResource('customers', CustomerController::class);
+        // Route::post('trips/{trip}/depart', [TripController::class, 'depart']);
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {

@@ -21,7 +21,7 @@ class FleetRequest extends Model
         'notes',
         'maintenance_requested',
         'fuel_requested',
-        'litre_cost',
+        'cost',
         'invoice_image',
     ];
 
@@ -36,7 +36,7 @@ class FleetRequest extends Model
         $field ??= $this->getRouteKeyName();
 
         $model = static::query()
-            ->whereHas('driver', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->whereHas('driver', fn($q) => $q->where('tenant_id', $tenantId))
             ->where($field, $value)
             ->first();
 
@@ -49,7 +49,7 @@ class FleetRequest extends Model
      */
     public function scopeForTenant($query, int $tenantId)
     {
-        return $query->whereHas('driver', fn ($q) => $q->where('tenant_id', $tenantId));
+        return $query->whereHas('driver', fn($q) => $q->where('tenant_id', $tenantId));
     }
 
     public function driver(): BelongsTo

@@ -17,6 +17,7 @@ class Driver extends Model
      */
     protected $fillable = [
         'tenant_id',
+        'user_id',
         'full_name',
         'phone',
         'zone_id',
@@ -25,6 +26,11 @@ class Driver extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function zone(): BelongsTo

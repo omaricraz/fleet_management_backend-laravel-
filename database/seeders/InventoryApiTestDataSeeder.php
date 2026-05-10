@@ -110,20 +110,15 @@ class InventoryApiTestDataSeeder extends Seeder
         );
 
         if ($driverUser !== null) {
-            $driver = Driver::query()->firstOrCreate(
+            $driver = Driver::query()->updateOrCreate(
+                ['user_id' => $driverUser->id],
                 [
                     'tenant_id' => $tenant->id,
-                    'phone' => '+1000000SEED1',
-                ],
-                [
                     'full_name' => $driverUser->name,
+                    'phone' => '+1000000SEED1',
                     'zone_id' => $zone->id,
                 ]
             );
-
-            if ($driver->full_name !== $driverUser->name) {
-                $driver->fill(['full_name' => $driverUser->name])->save();
-            }
 
             Trip::query()->updateOrCreate(
                 [

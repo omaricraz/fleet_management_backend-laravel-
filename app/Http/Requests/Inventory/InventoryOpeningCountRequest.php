@@ -5,7 +5,7 @@ namespace App\Http\Requests\Inventory;
 use App\Http\Requests\TenantScopedFormRequest;
 use Illuminate\Validation\Rule;
 
-class InventoryClosingCountRequest extends TenantScopedFormRequest
+class InventoryOpeningCountRequest extends TenantScopedFormRequest
 {
     public function authorize(): bool
     {
@@ -25,12 +25,12 @@ class InventoryClosingCountRequest extends TenantScopedFormRequest
                 'integer',
                 Rule::exists('trips', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
-            'car_id' => [
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.car_id' => [
                 'required',
                 'integer',
                 Rule::exists('cars', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
-            'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => [
                 'required',
                 'integer',

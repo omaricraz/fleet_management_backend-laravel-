@@ -67,45 +67,55 @@ class InventoryController extends Controller
         return $this->successResponse('Success', $data);
     }
 
-    //need to justify opening balance when there's load, then it should have it's own request file
-    // public function openingBalance(InventoryOpeningCountRequest $request): JsonResponse
-    // {
-    //     $tenantId = (int) $request->attributes->get('tenant_id');
-    //     $userId = (int) $request->user()->id;
-    //     $results = [];
+    public function openingBalance(InventoryOpeningCountRequest $request): JsonResponse
+    {
+        $tenantId = (int) $request->attributes->get('tenant_id');
+        $userId = (int) $request->user()->id;
+        $v = $request->validated();
+        $tripId = $v['trip_id'] ?? null;
+        if ($tripId !== null) {
+            $tripId = (int) $tripId;
+        }
 
-    //     try {
-    //         foreach ($request->input('cars', []) as $row) {
-    //             $carId = (int) $row['car_id'];
-    //             $tripId = $row['trip_id'] ?? null;
-    //             if ($tripId !== null) {
-    //                 $tripId = (int) $tripId;
-    //             }
-    //             $lines = $this->inventory->applyOpeningBalance(
-    //                 $tenantId,
-    //                 $userId,
-    //                 $carId,
-    //                 $tripId,
-    //                 $row['items']
-    //             );
-    //             $results[] = [
-    //                 'car_id' => $carId,
-    //                 'lines' => $lines,
-    //             ];
-    //         }
-    //     } catch (InvalidArgumentException $e) {
-    //         return $this->errorResponse($e->getMessage(), (object) [], 422);
-    //     }
+        /** @var array<int, array<int, array{product_id: int, quantity: mixed}>> $byCar */
+        $byCar = [];
+        foreach ($v['items'] as $row) {
+            $carId = (int) $row['car_id'];
+            $byCar[$carId][] = [
+                'product_id' => (int) $row['product_id'],
+                'quantity' => $row['actual_quantity'],
+            ];
+        }
 
-    //     return $this->successResponse('Opening balance applied successfully', $results);
-    // }
+        $results = [];
+
+        try {
+            foreach ($byCar as $carId => $serviceItems) {
+                $lines = $this->inventory->applyOpeningBalance(
+                    $tenantId,
+                    $userId,
+                    $carId,
+                    $tripId,
+                    $serviceItems,
+                );
+                $results[] = [
+                    'car_id' => $carId,
+                    'lines' => $lines,
+                ];
+            }
+        } catch (InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), (object) [], 422);
+        }
+
+        return $this->successResponse('Opening balance applied successfully', $results);
+    }
 
     public function load(InventoryCarBatchRequest $request): JsonResponse
     {
         return $this->processItemBatch(
             $request,
             'Inventory loaded successfully',
-            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applyLoad(
+            fn(int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applyLoad(
                 $tenantId,
                 $carId,
                 $productId,
@@ -121,7 +131,7 @@ class InventoryController extends Controller
         return $this->processItemBatch(
             $request,
             'Sale applied successfully',
-            fn (int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applySale(
+            fn(int $tenantId, int $carId, int $productId, string|int|float $quantity, ?int $tripId, int $userId): array => $this->inventory->applySale(
                 $tenantId,
                 $carId,
                 $productId,

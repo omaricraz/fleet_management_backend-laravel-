@@ -35,7 +35,7 @@ class RequestController extends Controller
             return $this->errorResponse('No driver profile is linked to this user.', (object) [], 403);
         }
 
-        $fleetRequest = $this->requests->createRequest($tenantId, $user, $driver, $request->validated());
+        $fleetRequest = $this->requests->createRequest($tenantId, $user, $driver, $request->validated(), $request->input('cost'));
 
         return $this->successResponse('Request created successfully', $fleetRequest->toArray(), 201);
     }
@@ -45,7 +45,7 @@ class RequestController extends Controller
         $tenantId = (int) $request->attributes->get('tenant_id');
 
         $data = $this->requests->getRequests($tenantId, $request->validated())
-            ->map(fn (FleetRequest $r) => $r->toArray())
+            ->map(fn(FleetRequest $r) => $r->toArray())
             ->values()
             ->all();
 
@@ -64,7 +64,7 @@ class RequestController extends Controller
         }
 
         $data = $this->requests->getDriverRequests($tenantId, (int) $driver->id)
-            ->map(fn (FleetRequest $r) => $r->toArray())
+            ->map(fn(FleetRequest $r) => $r->toArray())
             ->values()
             ->all();
 
@@ -84,11 +84,13 @@ class RequestController extends Controller
         $fleetRequest->load(['driver', 'user']);
 
         $payload = $fleetRequest->toArray();
-        if ($fleetRequest->type === RequestService::TYPE_FUEL
+        if (
+            $fleetRequest->type === RequestService::TYPE_FUEL
             && $fleetRequest->fuel_requested !== null
-            && $fleetRequest->litre_cost !== null) {
+            && $fleetRequest->cost !== null
+        ) {
             $payload['estimated_total_cost'] = round(
-                (float) $fleetRequest->fuel_requested * (float) $fleetRequest->litre_cost,
+                (float) $fleetRequest->fuel_requested * (float) $fleetRequest->cost,
                 5
             );
         }
@@ -109,11 +111,13 @@ class RequestController extends Controller
         }
 
         $payload = $updated->toArray();
-        if ($updated->type === RequestService::TYPE_FUEL
+        if (
+            $updated->type === RequestService::TYPE_FUEL
             && $updated->fuel_requested !== null
-            && $updated->litre_cost !== null) {
+            && $updated->cost !== null
+        ) {
             $payload['estimated_total_cost'] = round(
-                (float) $updated->fuel_requested * (float) $updated->litre_cost,
+                (float) $updated->fuel_requested * (float) $updated->cost,
                 5
             );
         }

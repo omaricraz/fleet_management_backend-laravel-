@@ -29,19 +29,19 @@ class StoreFleetRequest extends TenantScopedFormRequest
                 ]),
             ],
             'fuel_requested' => [
-                Rule::requiredIf(fn () => $this->input('type') === RequestService::TYPE_FUEL),
+                Rule::requiredIf(fn() => $this->input('type') === RequestService::TYPE_FUEL),
                 'nullable',
                 'numeric',
                 'gt:0',
             ],
-            'litre_cost' => [
-                Rule::requiredIf(fn () => $this->input('type') === RequestService::TYPE_FUEL),
-                'nullable',
+            'cost' => [
+                Rule::requiredIf(fn() => $this->input('type') === RequestService::TYPE_FUEL),
+                'required',
                 'numeric',
                 'gt:0',
             ],
             'maintenance_requested' => [
-                Rule::requiredIf(fn () => $this->input('type') === RequestService::TYPE_MAINTENANCE),
+                Rule::requiredIf(fn() => $this->input('type') === RequestService::TYPE_MAINTENANCE),
                 'nullable',
                 'string',
                 'max:500',

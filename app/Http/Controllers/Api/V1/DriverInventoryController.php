@@ -46,4 +46,29 @@ class DriverInventoryController extends Controller
             'transactions' => $data['transactions'],
         ]);
     }
+
+    public function products(Request $request): JsonResponse
+    {
+        $tenantId = (int) $request->attributes->get('tenant_id');
+        /** @var User $user */
+        $user = $request->user();
+
+        $driver = $this->resolveDriverForAuthenticatedUser($user, $tenantId);
+
+        if ($driver === null) {
+            return $this->errorResponse(
+                'No driver profile is linked to this user. Match your account name to a driver or contact an administrator.',
+                (object) [],
+                404
+            );
+        }
+
+        $data = $this->inventory->getDriverCurrentProducts($tenantId, (int) $driver->id);
+        $car = $data['car'];
+
+        return $this->successResponse('Success', [
+            'car' => $car ? new CarResource($car) : null,
+            'items' => $data['items'],
+        ]);
+    }
 }

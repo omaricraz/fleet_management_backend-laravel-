@@ -81,7 +81,6 @@ class SalesController extends Controller
             return $response;
         }
 
-        $sale->loadMissing(['trip', 'driver', 'customer', 'product']);
 
         return $this->successResponse('Success', $sale->toArray());
     }

@@ -27,7 +27,7 @@ class RequestService
     /**
      * @param  array<string, mixed>  $data  validated payload
      */
-    public function createRequest(int $tenantId, User $user, Driver $driver, array $data): FleetRequest
+    public function createRequest(int $tenantId, User $user, Driver $driver, array $data, float $cost): FleetRequest
     {
         $type = (string) $data['type'];
 
@@ -39,12 +39,12 @@ class RequestService
             'notes' => $data['notes'] ?? null,
             'maintenance_requested' => null,
             'fuel_requested' => null,
-            'litre_cost' => null,
+            'cost' => $cost,
         ];
 
         if ($type === self::TYPE_FUEL) {
             $attributes['fuel_requested'] = $data['fuel_requested'];
-            $attributes['litre_cost'] = $data['litre_cost'];
+            $attributes['cost'] = $data['cost'];
         } elseif ($type === self::TYPE_MAINTENANCE) {
             $attributes['maintenance_requested'] = $data['maintenance_requested'];
         }
@@ -79,11 +79,13 @@ class RequestService
                 'actor_user_id' => $actor->id,
             ];
 
-            if ($fleetRequest->type === self::TYPE_FUEL
+            if (
+                $fleetRequest->type === self::TYPE_FUEL
                 && $fleetRequest->fuel_requested !== null
-                && $fleetRequest->litre_cost !== null) {
+                && $fleetRequest->cost !== null
+            ) {
                 $context['estimated_total_cost'] = round(
-                    (float) $fleetRequest->fuel_requested * (float) $fleetRequest->litre_cost,
+                    (float) $fleetRequest->fuel_requested * (float) $fleetRequest->cost,
                     5
                 );
             }
@@ -110,8 +112,8 @@ class RequestService
             if ($rejectionNote !== '') {
                 $existing = $fleetRequest->notes !== null ? trim((string) $fleetRequest->notes) : '';
                 $fleetRequest->notes = $existing === ''
-                    ? 'Rejected: '.$rejectionNote
-                    : $existing."\n\nRejected: ".$rejectionNote;
+                    ? 'Rejected: ' . $rejectionNote
+                    : $existing . "\n\nRejected: " . $rejectionNote;
             }
 
             $fleetRequest->save();

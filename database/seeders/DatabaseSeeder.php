@@ -13,5 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(FleetFoundationSeeder::class);
         $this->call(InventoryApiTestDataSeeder::class);
+        $this->call( BasicTablesSeeder::class);
     }
 }

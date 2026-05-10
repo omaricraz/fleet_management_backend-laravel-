@@ -36,6 +36,10 @@ class StoreTripRequest extends TenantScopedFormRequest
                 Rule::exists('zones', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
             ],
             'destination' => ['nullable', 'string', 'max:500'],
+
+            'arrival_time' => ['nullable', 'date_format:H:i'],
+
+            'departure' => ['nullable', 'date_format:H:i'],
         ];
     }
 }

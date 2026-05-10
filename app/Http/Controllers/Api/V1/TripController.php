@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\V1\Concerns\ResolvesDriverForAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Trip\ListTripsRequest;
 use App\Http\Requests\Trip\StoreTripRequest;
-use App\Http\Requests\Trip\UpdateTripStatusRequest;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\TripService;
@@ -87,24 +86,24 @@ class TripController extends Controller
         return $this->successResponse('Success', $this->formatTripWorkspace($payload));
     }
 
-    public function updateStatus(UpdateTripStatusRequest $request, Trip $trip): JsonResponse
-    {
-        if ($response = $this->ensureTripAccessible($request, $trip)) {
-            return $response;
-        }
+    // public function updateStatus(UpdateTripStatusRequest $request, Trip $trip): JsonResponse
+    // {
+    //     if ($response = $this->ensureTripAccessible($request, $trip)) {
+    //         return $response;
+    //     }
 
-        try {
-            $updated = $this->trips->updateStatus(
-                $trip,
-                (string) $request->validated('status'),
-                $request->user()?->id !== null ? (int) $request->user()->id : null
-            );
-        } catch (InvalidArgumentException $e) {
-            return $this->errorResponse($e->getMessage(), (object) [], 422);
-        }
+    //     try {
+    //         $updated = $this->trips->updateStatus(
+    //             $trip,
+    //             (string) $request->validated('status'),
+    //             $request->user()?->id !== null ? (int) $request->user()->id : null
+    //         );
+    //     } catch (InvalidArgumentException $e) {
+    //         return $this->errorResponse($e->getMessage(), (object) [], 422);
+    //     }
 
-        return $this->successResponse('Status updated successfully', $updated->toArray());
-    }
+    //     return $this->successResponse('Status updated successfully', $updated->toArray());
+    // }
 
     public function start(Request $request, Trip $trip): JsonResponse
     {
@@ -124,23 +123,6 @@ class TripController extends Controller
         return $this->successResponse('Trip started successfully', $updated->toArray());
     }
 
-    public function depart(Request $request, Trip $trip): JsonResponse
-    {
-        if ($response = $this->ensureTripAccessible($request, $trip)) {
-            return $response;
-        }
-
-        try {
-            $updated = $this->trips->departTrip(
-                $trip,
-                $request->user()?->id !== null ? (int) $request->user()->id : null
-            );
-        } catch (InvalidArgumentException $e) {
-            return $this->errorResponse($e->getMessage(), (object) [], 422);
-        }
-
-        return $this->successResponse('Trip departed successfully', $updated->toArray());
-    }
 
     public function end(Request $request, Trip $trip): JsonResponse
     {

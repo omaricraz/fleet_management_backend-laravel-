@@ -55,53 +55,72 @@ final class InventoryService
      * @param  list<array{product_id: int|string, quantity: string|int|float}>|list<InventoryOperationData>  $items
      * @return list<array{product_id: int, before_qty: string, after_qty: string, transaction_id: int}>
      */
-    //need to justify it's usecase before letting exist again !!!!!
-    
-    // public function applyOpeningBalance(
-    //     int $tenantId,
-    //     ?int $userId,
-    //     int $carId,
-    //     ?int $tripId,
-    //     array $items,
-    // ): array {
-    //     $this->assertTenantOwnsCar($tenantId, $carId);
 
-    //     $normalized = $this->normalizeItemInputs($items);
 
-    //     return DB::transaction(function () use ($tenantId, $carId, $tripId, $normalized): array {
-    //         $results = [];
+    public function applyOpeningBalance(
+        int $tenantId,
+        ?int $userId,
+        int $carId,
+        ?int $tripId,
+        array $items,
+    ): array {
+        $this->assertTenantOwnsCar($tenantId, $carId);
 
-    //         foreach ($normalized as $item) {
-    //             $before = $this->getCurrentQuantity($tenantId, $carId, $item->productId);
-    //             $after = $item->quantity;
-    //             $delta = InventoryMath::sub($after, $before);
+        $normalized = $this->normalizeItemInputs($items);
 
-    //             $this->persistSnapshotQty($tenantId, $carId, $item->productId, $after, $tripId);
+        return DB::transaction(function () use (
+            $tenantId,
+            $carId,
+            $tripId,
+            $normalized,
+            $userId
+        ): array {
 
-    //             $tx = $this->createTransaction(
-    //                 $tenantId,
-    //                 $carId,
-    //                 $item->productId,
-    //                 self::TYPE_OPENING_BALANCE,
-    //                 $delta,
-    //                 $tripId,
-    //                 null,
-    //                 $before,
-    //                 $after
-    //             );
+            $results = [];
 
-    //             $results[] = [
-    //                 'product_id' => $item->productId,
-    //                 'before_qty' => $before,
-    //                 'after_qty' => $after,
-    //                 'transaction_id' => $tx->id,
-    //             ];
-    //         }
+            foreach ($normalized as $item) {
+                $before = $this->getCurrentQuantity($tenantId, $carId, $item->productId);
 
-    //         return $results;
-    //     });
-    // }
+                $after = $item->quantity;
 
+                $delta = InventoryMath::sub($after, $before);
+
+                $this->persistSnapshotQty(
+                    $tenantId,
+                    $carId,
+                    $item->productId,
+                    $after,
+                    $tripId
+                );
+
+                $tx = $this->createTransaction(
+                    $tenantId,
+                    $carId,
+                    $item->productId,
+                    self::TYPE_OPENING_BALANCE,
+                    $delta,
+                    $tripId,
+                    null,
+                    $before,
+                    $after,
+                    null,
+                    null,
+                    null,
+                    null,
+                    $userId,
+                );
+
+                $results[] = [
+                    'product_id' => $item->productId,
+                    'before_qty' => $before,
+                    'after_qty' => $after,
+                    'transaction_id' => $tx->id,
+                ];
+            }
+
+            return $results;
+        });
+    }
     /**
      * @return array{before_qty: string, after_qty: string, transaction_id: int}
      */
@@ -556,6 +575,24 @@ final class InventoryService
             'car' => $car,
             'snapshot' => $history['snapshot'],
             'transactions' => $history['transactions'],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     car: \App\Models\Car|null,
+     *     items: list<array{product_id: int, product_name: string, quantity: string}>
+     * }
+     */
+    public function getDriverCurrentProducts(
+        int $tenantId,
+        int $driverId,
+    ): array {
+        $data = $this->getDriverInventory($tenantId, $driverId);
+
+        return [
+            'car' => $data['car'],
+            'items' => $data['snapshot'],
         ];
     }
 
@@ -1020,7 +1057,7 @@ final class InventoryService
         $plate = trim((string) ($car->plate_number ?? ''));
 
         if ($model !== '' && $plate !== '') {
-            return $model.' ('.$plate.')';
+            return $model . ' (' . $plate . ')';
         }
 
         return $model !== '' ? $model : $plate;
