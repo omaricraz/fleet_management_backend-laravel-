@@ -4,7 +4,7 @@ set -eu
 cd /var/www/html
 
 # Only the consolidated schema migration; other files under database/migrations are skipped.
-php artisan migrate --force --path=database\migrations\2026_05_15_000001_only_migration_file_you_need_2.php
+php artisan migrate --force --path=database/migrations/2026_05_15_000001_only_migration_file_you_need_2.php
 php artisan config:cache
 php artisan route:cache
 
