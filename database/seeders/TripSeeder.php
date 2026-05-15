@@ -13,6 +13,8 @@ class TripSeeder extends Seeder
      */
     public function run(): void
     {
+        $faker = \Faker\Factory::create();
+
         $trips = [];
 
         for ($i = 1; $i <= 100; $i++) {
@@ -35,9 +37,9 @@ class TripSeeder extends Seeder
 
                 'distance_covered' => rand(50, 3000),
 
-                'destination' => fake()->city() . ', ' . fake()->country(),
+                'destination' => $faker->city() . ', ' . $faker->country(),
 
-                'status' => fake()->randomElement([
+                'status' => $faker->randomElement([
                     'active',
                     'closed'
                 ]),

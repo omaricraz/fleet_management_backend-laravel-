@@ -9,12 +9,14 @@ class DriverSeeder extends Seeder
 {
     public function run(): void
     {
+        $faker = \Faker\Factory::create();
+
         $drivers = [];
 
         for ($i = 1; $i <= 40; $i++) {
 
             $drivers[] = [
-                'full_name' => fake()->name(),
+                'full_name' => $faker->name(),
 
                 'phone' => '63' . rand(1000000, 9999999),
 

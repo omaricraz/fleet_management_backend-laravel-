@@ -20,9 +20,9 @@ class ProductFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'item' => fake()->words(2, true),
+            'item' => $this->faker->words(2, true),
             'type' => 'unit',
-            'price' => fake()->randomFloat(2, 1, 50),
+            'price' => $this->faker->randomFloat(2, 1, 50),
             'unit_volume' => 0,
             'unit_weight' => 0,
         ];

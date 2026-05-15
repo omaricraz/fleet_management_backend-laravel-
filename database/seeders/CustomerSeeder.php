@@ -9,12 +9,14 @@ class CustomerSeeder extends Seeder
 {
     public function run(): void
     {
+        $faker = \Faker\Factory::create();
+
         $customers = [];
 
         for ($i = 1; $i <= 100; $i++) {
 
             $customers[] = [
-                'full_name' => fake()->name(),
+                'full_name' => $faker->name(),
 
                 'phone' => '61' . rand(1000000, 9999999),
 
@@ -22,9 +24,9 @@ class CustomerSeeder extends Seeder
 
                 'tenant_id' => 1,
 
-                'latitude' => fake()->latitude(2, 12),
+                'latitude' => $faker->latitude(2, 12),
 
-                'longitude' => fake()->longitude(42, 52),
+                'longitude' => $faker->longitude(42, 52),
 
                 'trip_id' => rand(101, 200),
 

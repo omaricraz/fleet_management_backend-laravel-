@@ -20,8 +20,8 @@ class CarFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'model' => fake()->word(),
-            'plate_number' => strtoupper(fake()->bothify('??-#####')),
+            'model' => $this->faker->word(),
+            'plate_number' => strtoupper($this->faker->bothify('??-#####')),
             'overall_volume_capacity' => 0,
             'overall_weight_capacity' => 0,
             'fuel_efficiency' => 0,
