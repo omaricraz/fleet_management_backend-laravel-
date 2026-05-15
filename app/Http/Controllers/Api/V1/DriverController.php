@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\driver\StoreDriverRequest;
 use App\Http\Requests\driver\UpdateDriverRequest;
 use App\Http\Resources\DriverResource;
+use App\Http\Resources\UserResource;
 use App\Models\Driver;
+use App\Services\DriverAccountProvisioningService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,10 @@ use Illuminate\Http\Request;
 class DriverController extends Controller
 {
     use ApiResponse, PaginatesTenantResources;
+
+    public function __construct(
+        protected DriverAccountProvisioningService $driverAccounts
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -35,13 +41,13 @@ class DriverController extends Controller
 
     public function store(StoreDriverRequest $request): JsonResponse
     {
-        $driver = Driver::query()->create([
-            ...$request->validated(),
-            'tenant_id' => (int) $request->attributes->get('tenant_id'),
-        ]);
-        $driver->load('zone');
+        $tenantId = (int) $request->attributes->get('tenant_id');
+        $payload = $this->driverAccounts->createDriverWithAccount($tenantId, $request->validated());
 
-        return $this->successResponse('Created successfully', new DriverResource($driver), 201);
+        return $this->successResponse('Created successfully', [
+            'driver' => new DriverResource($payload['driver']),
+            'user' => new UserResource($payload['user']),
+        ], 201);
     }
 
     public function show(Request $request, Driver $driver): JsonResponse
