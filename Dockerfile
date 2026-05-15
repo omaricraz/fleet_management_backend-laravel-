@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Install Composer dependencies (no application code required yet)
 # -----------------------------------------------------------------------------
-FROM php:8.2-cli-alpine AS composer_deps
+FROM php:8.4-cli-alpine AS composer_deps
 
 RUN apk add --no-cache \
     git \
