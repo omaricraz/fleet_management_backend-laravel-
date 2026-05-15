@@ -21,19 +21,27 @@ class InventoryReturnRequest extends TenantScopedFormRequest
 
         return [
             'notes' => ['required', 'string', 'min:1', 'max:2000'],
+            'trip_id' => [
+                'required',
+                'integer',
+                Rule::exists('trips', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
+            ],
             'cars' => ['required', 'array', 'min:1'],
             'cars.*.car_id' => [
-                'required', 'integer',
-                Rule::exists('cars', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'required',
+                'integer',
+                Rule::exists('cars', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.trip_id' => [
-                'nullable', 'integer',
-                Rule::exists('trips', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'nullable',
+                'integer',
+                Rule::exists('trips', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.items' => ['required', 'array', 'min:1'],
             'cars.*.items.*.product_id' => [
-                'required', 'integer',
-                Rule::exists('products', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'required',
+                'integer',
+                Rule::exists('products', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.items.*.quantity' => ['required', 'numeric', 'gt:0'],
         ];

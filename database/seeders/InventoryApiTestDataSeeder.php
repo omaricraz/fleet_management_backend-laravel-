@@ -130,7 +130,7 @@ class InventoryApiTestDataSeeder extends Seeder
                     'zone_id' => $zone->id,
                     'start_date' => now(),
                     'end_date' => null,
-                    'status' => TripService::STATUS_LOADING,
+                    'status' => TripService::STATUS_CLOSED,
                 ]
             );
         } else {
@@ -156,12 +156,12 @@ class InventoryApiTestDataSeeder extends Seeder
         if ($this->command !== null) {
             $this->command->newLine();
             $this->command->info('Inventory API test data ready.');
-            $this->command->line('  Tenant ID: '.$tenant->id);
-            $this->command->line('  Car A: '.$carA->id.' (plate '.self::CAR_PLATE_A.')');
-            $this->command->line('  Car B: '.$carB->id.' (plate '.self::CAR_PLATE_B.')');
-            $this->command->line('  Products: '.$productA->id.' / '.$productB->id.' / '.$productC->id);
+            $this->command->line('  Tenant ID: ' . $tenant->id);
+            $this->command->line('  Car A: ' . $carA->id . ' (plate ' . self::CAR_PLATE_A . ')');
+            $this->command->line('  Car B: ' . $carB->id . ' (plate ' . self::CAR_PLATE_B . ')');
+            $this->command->line('  Products: ' . $productA->id . ' / ' . $productB->id . ' / ' . $productC->id);
             if ($driverUser !== null) {
-                $this->command->line('  Driver user matches Driver row: '.$driverUser->name.' (GET /api/v1/driver/inventory → car A)');
+                $this->command->line('  Driver user matches Driver row: ' . $driverUser->name . ' (GET /api/v1/driver/inventory → car A)');
             }
         }
     }

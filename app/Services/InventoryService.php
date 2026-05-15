@@ -410,7 +410,7 @@ final class InventoryService
                     $carId,
                     $productId,
                     self::TYPE_CLOSING_COUNT,
-                    null,
+                    $variance,
                     $tripId,
                     null,
                     null,
@@ -581,7 +581,7 @@ final class InventoryService
     /**
      * @return array{
      *     car: \App\Models\Car|null,
-     *     items: list<array{product_id: int, product_name: string, quantity: string}>
+     *     items: list<array{product_id: int, product_name: string, quantity: string, price: string|null}>
      * }
      */
     public function getDriverCurrentProducts(
@@ -598,7 +598,7 @@ final class InventoryService
 
     /**
      * @return array{
-     *     snapshot: list<array{product_id: int, product_name: string, quantity: string}>,
+     *     snapshot: list<array{product_id: int, product_name: string, quantity: string, price: string|null}>,
      *     transactions: list<array<string, mixed>>
      * }
      */
@@ -614,15 +614,18 @@ final class InventoryService
         $snapshotRows = Inventory::query()
             ->where('tenant_id', $tenantId)
             ->where('car_id', $carId)
-            ->with(['product:id,item'])
+            ->with(['product:id,item,price'])
             ->orderBy('product_id')
             ->get(['product_id', 'quantity']);
 
         $snapshot = $snapshotRows->map(function (Inventory $inv) {
+            $price = $inv->product?->price;
+
             return [
                 'product_id' => (int) $inv->product_id,
                 'product_name' => (string) ($inv->product?->item ?? ''),
                 'quantity' => InventoryMath::normalize((string) $inv->quantity),
+                'price' => $price !== null ? (string) $price : null,
             ];
         })->values()->all();
 
@@ -637,11 +640,15 @@ final class InventoryService
                 $before = $tx->before_qty;
                 $after = $tx->after_qty;
 
+                $ledgerQty = $tx->quantity ?? $tx->variance;
+
                 return [
                     'id' => $tx->id,
                     'product_id' => (int) $tx->product_id,
                     'product_name' => (string) ($tx->product?->item ?? ''),
-                    'quantity' => InventoryMath::normalize((string) $tx->quantity),
+                    'quantity' => InventoryMath::normalize(
+                        $ledgerQty !== null && (string) $ledgerQty !== '' ? $ledgerQty : '0'
+                    ),
                     'type' => $tx->type,
                     'trip_id' => $tx->trip_id,
                     'sale_id' => $tx->sale_id,
@@ -702,7 +709,7 @@ final class InventoryService
         $negativeVariance = InventoryTransaction::query()
             ->where('tenant_id', $tenantId)
             ->where('type', self::TYPE_CLOSING_COUNT)
-            ->where('variance', '<', 0)
+            ->where('variance', '!=', 0)
             ->where('created_at', '>=', $since)
             ->with(['car:id,model,plate_number', 'product:id,item'])
             ->orderByDesc('id')
@@ -751,7 +758,7 @@ final class InventoryService
             'low_stock' => $lowStock,
             'zero_stock' => $zeroStock,
             'negative_variance_recent' => $negativeVariance,
-            // 'repeated_shortages' => $repeated,
+            'repeated_shortages' => $repeated,
         ];
     }
 

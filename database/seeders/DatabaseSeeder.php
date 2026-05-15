@@ -12,7 +12,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(FleetFoundationSeeder::class);
-        $this->call(InventoryApiTestDataSeeder::class);
-        $this->call( BasicTablesSeeder::class);
+        $this->call(TenantSeeder::class,);
+        $this->call(ZoneSeeder::class);
+        $this->call(ProductSeeder::class);
+        $this->call(CarSeeder::class);
+        $this->call(DriverSeeder::class);
+        $this->call(TripSeeder::class);
+        $this->call(CustomerSeeder::class);
+        $this->call(SalesSeeder::class);
+        $this->call(InventorySeeder::class);
+        $this->call(InventoryTransactionSeeder::class);
     }
 }

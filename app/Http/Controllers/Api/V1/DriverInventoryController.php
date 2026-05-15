@@ -64,10 +64,9 @@ class DriverInventoryController extends Controller
         }
 
         $data = $this->inventory->getDriverCurrentProducts($tenantId, (int) $driver->id);
-        $car = $data['car'];
+
 
         return $this->successResponse('Success', [
-            'car' => $car ? new CarResource($car) : null,
             'items' => $data['items'],
         ]);
     }

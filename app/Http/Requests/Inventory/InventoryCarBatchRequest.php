@@ -22,17 +22,20 @@ class InventoryCarBatchRequest extends TenantScopedFormRequest
         return [
             'cars' => ['required', 'array', 'min:1'],
             'cars.*.car_id' => [
-                'required', 'integer',
-                Rule::exists('cars', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'required',
+                'integer',
+                Rule::exists('cars', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.trip_id' => [
-                'nullable', 'integer', //should be required when trip feature is implemented!!!!!
-                Rule::exists('trips', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'required',
+                'integer', //should be required when trip feature is implemented!!!!!
+                Rule::exists('trips', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.items' => ['required', 'array', 'min:1'],
             'cars.*.items.*.product_id' => [
-                'required', 'integer',
-                Rule::exists('products', 'id')->where(fn ($q) => $q->where('tenant_id', $tenant)),
+                'required',
+                'integer',
+                Rule::exists('products', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
             'cars.*.items.*.quantity' => ['required', 'numeric', 'gt:0'],
         ];

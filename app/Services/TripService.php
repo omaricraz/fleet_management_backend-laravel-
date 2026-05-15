@@ -149,6 +149,17 @@ final class TripService
         return $q->with(['driver', 'car', 'zone'])->get();
     }
 
+    public function findCurrentTripForDriver(int $tenantId, int $driverId): ?Trip
+    {
+        return Trip::query()
+            ->where('tenant_id', $tenantId)
+            ->where('driver_id', $driverId)
+            ->where('status', self::STATUS_ACTIVE)
+            ->whereNull('end_date')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     /**
      * @return array{
      *     trip: Trip,

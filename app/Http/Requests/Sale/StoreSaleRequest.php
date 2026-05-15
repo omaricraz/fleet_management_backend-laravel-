@@ -20,13 +20,13 @@ class StoreSaleRequest extends TenantScopedFormRequest
         $tenantId = $this->tenantId();
 
         return [
-            // 'trip_id' => [
-            //     'required',
-            //     'integer',
-            //     Rule::exists('trips', 'id')->where(function ($query) use ($tenantId): void {
-            //         $query->where('tenant_id', $tenantId)->whereNull('deleted_at');
-            //     }),
-            // ],
+            'trip_id' => [
+                'required',
+                'integer',
+                Rule::exists('trips', 'id')->where(function ($query) use ($tenantId): void {
+                    $query->where('tenant_id', $tenantId)->whereNull('deleted_at');
+                }),
+            ],
             'product_id' => [
                 'required',
                 'integer',

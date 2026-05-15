@@ -68,6 +68,39 @@ class TripApiTest extends TestCase
         );
     }
 
+    public function test_driver_can_fetch_current_trip_workspace_before_sales(): void
+    {
+        $s = $this->seedTenantWithFleet();
+        $trip = Trip::query()->create([
+            'tenant_id' => $s['tenant']->id,
+            'driver_id' => $s['driver']->id,
+            'car_id' => $s['carA']->id,
+            'status' => TripService::STATUS_ACTIVE,
+        ]);
+
+        Sanctum::actingAs($s['driverUser']);
+        $res = $this->getJson('/api/v1/driver/trip/current');
+        $res->assertOk();
+        $res->assertJsonPath('data.trip.id', $trip->id);
+        $this->assertIsArray($res->json('data.inventory_summary'));
+        $this->assertIsArray($res->json('data.sales_summary'));
+    }
+
+    public function test_driver_current_trip_returns_404_when_none_active(): void
+    {
+        $s = $this->seedTenantWithFleet();
+        Trip::query()->create([
+            'tenant_id' => $s['tenant']->id,
+            'driver_id' => $s['driver']->id,
+            'car_id' => $s['carA']->id,
+            'status' => TripService::STATUS_CLOSED,
+            'end_date' => now(),
+        ]);
+
+        Sanctum::actingAs($s['driverUser']);
+        $this->getJson('/api/v1/driver/trip/current')->assertStatus(404);
+    }
+
     public function test_cannot_create_second_active_trip_for_same_driver(): void
     {
         $s = $this->seedTenantWithFleet();
@@ -134,7 +167,7 @@ class TripApiTest extends TestCase
             'zone_id' => $s['zone']->id,
             'driver_id' => $s['driver']->id,
             'car_id' => $s['carA']->id,
-            'status' => TripService::STATUS_READY,
+            'status' => TripService::STATUS_CLOSED,
         ]);
 
         $this->postJson("/api/v1/trips/{$trip->id}/depart")->assertStatus(422);
@@ -150,7 +183,7 @@ class TripApiTest extends TestCase
             'zone_id' => $s['zone']->id,
             'driver_id' => $s['driver']->id,
             'car_id' => $s['carA']->id,
-            'status' => TripService::STATUS_READY,
+            'status' => TripService::STATUS_CLOSED,
         ]);
 
         $this->postJson("/api/v1/trips/{$trip->id}/end")->assertStatus(422);
@@ -192,7 +225,7 @@ class TripApiTest extends TestCase
             'status' => TripService::STATUS_READY,
         ]);
 
-        $res = $this->getJson('/api/v1/trips?status='.TripService::STATUS_READY);
+        $res = $this->getJson('/api/v1/trips?status=' . TripService::STATUS_READY);
         $res->assertOk();
         $this->assertTrue($res->json('success'));
         $this->assertGreaterThanOrEqual(1, count($res->json('data')));

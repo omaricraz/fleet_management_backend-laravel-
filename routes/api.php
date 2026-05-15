@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CarController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DriverController;
 use App\Http\Controllers\Api\V1\DriverInventoryController;
 use App\Http\Controllers\Api\V1\InventoryController;
@@ -34,7 +35,6 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
         Route::apiResource('zones', ZoneController::class);
         Route::apiResource('cars', CarController::class);
-        Route::apiResource('drivers', DriverController::class);
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
 
@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('inventory/load', [InventoryController::class, 'load']);
         Route::post('inventory/manual-sale', [InventoryController::class, 'manualSale']);
         Route::post('inventory/close-count', [InventoryController::class, 'closeCount']);
+        Route::get('dashboard/summary', [DashboardController::class, 'summary']);
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager'])->group(function (): void {
@@ -54,7 +55,6 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin'])->group(function (): void {
         Route::post('users', [UserController::class, 'store']);
         Route::put('users/{user}', [UserController::class, 'update']);
-        Route::patch('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
 
         Route::post('inventory/adjustment', [InventoryController::class, 'adjustment']);
@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'tenant', 'role:driver, manager, admin'])->group(function (): void {
         Route::get('driver/inventory', [DriverInventoryController::class, 'show']);
         Route::get('driver/inventory/products', [DriverInventoryController::class, 'products']);
+        Route::apiResource('drivers', DriverController::class);
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
@@ -79,6 +80,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:driver'])->group(function (): void {
+        Route::get('driver/trip/current', [TripController::class, 'currentForDriver']);
         Route::get('sales/my', [SalesController::class, 'my']);
         Route::get('requests/my', [RequestController::class, 'my']);
         Route::post('requests', [RequestController::class, 'store']);
@@ -93,6 +95,7 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {
         Route::get('requests/{fleet_request}', [RequestController::class, 'show']);
+        Route::patch('users/{user}', [UserController::class, 'update']);
     });
 
     Route::middleware(['auth:sanctum', 'tenant', 'role:admin,manager,driver'])->group(function (): void {

@@ -86,6 +86,38 @@ class TripController extends Controller
         return $this->successResponse('Success', $this->formatTripWorkspace($payload));
     }
 
+    /**
+     * Current active trip for the authenticated driver (for trip_id and workspace context before recording sales).
+     */
+    public function currentForDriver(Request $request): JsonResponse
+    {
+        $tenantId = (int) $request->attributes->get('tenant_id');
+        /** @var User $user */
+        $user = $request->user();
+
+        $driver = $this->resolveDriverForAuthenticatedUser($user, $tenantId);
+        if ($driver === null) {
+            return $this->errorResponse('No driver profile is linked to this user.', (object) [], 403);
+        }
+
+        $trip = $this->trips->findCurrentTripForDriver($tenantId, (int) $driver->id);
+        if ($trip === null) {
+            return $this->errorResponse(
+                'No active trip found. Open a trip before recording sales.',
+                (object) [],
+                404
+            );
+        }
+
+        try {
+            $payload = $this->trips->getTripDetails($tenantId, $trip);
+        } catch (InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), (object) [], 422);
+        }
+
+        return $this->successResponse('Success', $this->formatTripWorkspace($payload));
+    }
+
     // public function updateStatus(UpdateTripStatusRequest $request, Trip $trip): JsonResponse
     // {
     //     if ($response = $this->ensureTripAccessible($request, $trip)) {

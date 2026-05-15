@@ -21,7 +21,7 @@ class InventoryOpeningCountRequest extends TenantScopedFormRequest
 
         return [
             'trip_id' => [
-                'nullable',
+                'required',
                 'integer',
                 Rule::exists('trips', 'id')->where(fn($q) => $q->where('tenant_id', $tenant)),
             ],
