@@ -27,7 +27,7 @@ RUN composer install \
 # -----------------------------------------------------------------------------
 # Stage 2: Production runtime (Alpine PHP CLI + extensions, php -S on :80)
 # -----------------------------------------------------------------------------
-FROM php:8.2-cli-alpine AS production
+FROM php:8.4-cli-alpine AS production
 
 RUN apk add --no-cache \
     freetype-dev \
