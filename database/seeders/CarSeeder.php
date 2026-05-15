@@ -9,6 +9,8 @@ class CarSeeder extends Seeder
 {
     public function run(): void
     {
+        $faker = \Faker\Factory::create();
+
         $cars = [];
 
         $models = [
@@ -33,7 +35,7 @@ class CarSeeder extends Seeder
         for ($i = 1; $i <= 30; $i++) {
 
             $cars[] = [
-                'model' => fake()->randomElement($models),
+                'model' => $faker->randomElement($models),
 
                 'plate_number' => 'SO-' . rand(1000, 9999),
 
@@ -45,7 +47,7 @@ class CarSeeder extends Seeder
 
                 'fuel_efficiency' => rand(4, 15),
 
-                'color' => fake()->randomElement($colors),
+                'color' => $faker->randomElement($colors),
 
                 'created_at' => now(),
                 'updated_at' => now(),
