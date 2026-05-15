@@ -6,9 +6,9 @@
 FROM php:8.2-cli-alpine AS composer_deps
 
 RUN apk add --no-cache \
-        git \
-        unzip \
-        libzip-dev \
+    git \
+    unzip \
+    libzip-dev \
     && docker-php-ext-install -j"$(nproc)" zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -18,11 +18,11 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 
 RUN composer install \
-        --no-dev \
-        --no-scripts \
-        --no-interaction \
-        --prefer-dist \
-        --optimize-autoloader
+    --no-dev \
+    --no-scripts \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
 
 # -----------------------------------------------------------------------------
 # Stage 2: Production runtime (Alpine PHP CLI + extensions, php -S on :80)
@@ -30,25 +30,25 @@ RUN composer install \
 FROM php:8.2-cli-alpine AS production
 
 RUN apk add --no-cache \
-        freetype-dev \
-        icu-dev \
-        libjpeg-turbo-dev \
-        libpng-dev \
-        libwebp-dev \
-        libzip-dev \
-        oniguruma-dev \
-        linux-headers \
-        $PHPIZE_DEPS \
+    freetype-dev \
+    icu-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    libzip-dev \
+    oniguruma-dev \
+    linux-headers \
+    $PHPIZE_DEPS \
     && docker-php-ext-configure gd \
-        --with-freetype \
-        --with-jpeg \
-        --with-webp \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
-        bcmath \
-        gd \
-        opcache \
-        pdo_mysql \
-        zip \
+    bcmath \
+    gd \
+    opcache \
+    pdo_mysql \
+    zip \
     && apk del --no-network $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/*
 
@@ -67,8 +67,8 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \
     && rm -f /usr/bin/composer
 
 RUN if ! id www-data >/dev/null 2>&1; then \
-        addgroup -S www-data -g 82 \
-        && adduser -S www-data -u 82 -G www-data -h /var/www -s /sbin/nologin; \
+    addgroup -S www-data -g 82 \
+    && adduser -S www-data -u 82 -G www-data -h /var/www -s /sbin/nologin; \
     fi
 
 RUN chown -R www-data:www-data storage bootstrap/cache \
