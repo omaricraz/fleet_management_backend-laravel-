@@ -241,7 +241,7 @@ final class SalesService
 
         $driver = Driver::query()
             ->where('tenant_id', $tenantId)
-            ->where('id', $user->id)
+            ->where('user_id', $user->id)
             ->first();
 
         if ($driver !== null) {
