@@ -49,6 +49,7 @@ RUN apk add --no-cache \
     opcache \
     pdo_mysql \
     zip \
+    postgresql-dev \
     && apk del --no-network $PHPIZE_DEPS \
     && rm -rf /var/cache/apk/* /tmp/*
 
@@ -65,6 +66,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \
     && php artisan package:discover --ansi --no-interaction || true \
     && rm -f /usr/bin/composer
+
+RUN docker-php-ext-install pdo_pgsql pgsql
 
 RUN if ! id www-data >/dev/null 2>&1; then \
     addgroup -S www-data -g 82 \
