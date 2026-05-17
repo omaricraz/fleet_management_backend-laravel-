@@ -16,7 +16,7 @@ use InvalidArgumentException;
 
 final class SalesService
 {
-    public const EVENT_SALE = 'SALE';
+    public const EVENT_SALE = 'sale';
 
     public function __construct(
         private readonly InventoryService $inventory,
